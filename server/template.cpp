@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -9,7 +10,10 @@
 #include <netdb.h>
 #include <sys/epoll.h>
 #include <unordered_set>
+#include <list>
 #include <signal.h>
+
+// Przykład dodatkowo czyta do nowej linii i obsługuje EPOLLOUT
 
 class Client;
 
@@ -32,6 +36,24 @@ struct Handler {
 
 class Client : public Handler {
     int _fd;
+    struct Buffer {
+        Buffer() {data = (char*) malloc(len);}
+        Buffer(const char* srcData, ssize_t srcLen) : len(srcLen) {data = (char*) malloc(len); memcpy(data, srcData, len);}
+        ~Buffer() {free(data);}
+        Buffer(const Buffer&) = delete;
+        void doube() {len*=2; data = (char*) realloc(data, len);}
+        ssize_t remaining() {return len - pos;}
+        char * dataPos() {return data + pos;}
+        char * data;
+        ssize_t len = 32;
+        ssize_t pos = 0;
+    };
+    Buffer readBuffer;
+    std::list<Buffer> dataToWrite;
+    void waitForWrite(bool epollout) {
+        epoll_event ee {EPOLLIN|EPOLLRDHUP|(epollout?EPOLLOUT:0), {.ptr=this}};
+        epoll_ctl(epollFd, EPOLL_CTL_MOD, _fd, &ee);
+    }
 public:
     Client(int fd) : _fd(fd) {
         epoll_event ee {EPOLLIN|EPOLLRDHUP, {.ptr=this}};
@@ -45,21 +67,66 @@ public:
     int fd() const {return _fd;}
     virtual void handleEvent(uint32_t events) override {
         if(events & EPOLLIN) {
-            char buffer[256];
-            ssize_t count = read(_fd, buffer, 256);
-            if(count > 0)
-                sendToAllBut(_fd, buffer, count);
-            else
+            ssize_t count = read(_fd, readBuffer.dataPos(), readBuffer.remaining());
+            if(count <= 0)
                 events |= EPOLLERR;
+            else {
+                readBuffer.pos += count;
+                char * eol = (char*) memchr(readBuffer.data, '\n', readBuffer.pos);
+                if(eol == nullptr) {
+                    if(0 == readBuffer.remaining())
+                        readBuffer.doube();
+                } else {
+                    do {
+                        auto thismsglen = eol - readBuffer.data + 1;
+                        sendToAllBut(_fd, readBuffer.data, thismsglen);
+                        auto nextmsgslen =  readBuffer.pos - thismsglen;
+                        memmove(readBuffer.data, eol+1, nextmsgslen);
+                        readBuffer.pos = nextmsgslen;
+                    } while((eol = (char*) memchr(readBuffer.data, '\n', readBuffer.pos)));
+                }
+            }
         }
-        if(events & ~EPOLLIN){
+        if(events & EPOLLOUT) {
+            do {
+                int remaining = dataToWrite.front().remaining();
+                int sent = send(_fd, dataToWrite.front().data+dataToWrite.front().pos, remaining, MSG_DONTWAIT);
+                if(sent == remaining) {
+                    dataToWrite.pop_front();
+                    if(0 == dataToWrite.size()) {
+                        waitForWrite(false);
+                        break;
+                    }
+                    continue;
+                } else if(sent == -1) {
+                    if(errno != EWOULDBLOCK && errno != EAGAIN)
+                        events |= EPOLLERR;
+                } else
+                    dataToWrite.front().pos += sent;
+            } while(false);
+        }
+        if(events & ~(EPOLLIN|EPOLLOUT)) {
             remove();
         }
     }
-    void write(char * buffer, int count){
-        if(count != ::write(_fd, buffer, count))
-            remove();
-        
+    void write(char * buffer, int count) {
+        if(dataToWrite.size() != 0) {
+            dataToWrite.emplace_back(buffer, count);
+            return;
+        }
+        int sent = send(_fd, buffer, count, MSG_DONTWAIT);
+        if(sent == count)
+            return;
+        if(sent == -1) {
+            if(errno != EWOULDBLOCK && errno != EAGAIN){
+                remove();
+                return;
+            }
+            dataToWrite.emplace_back(buffer, count);
+        } else {
+            dataToWrite.emplace_back(buffer+sent, count-sent);
+        }
+        waitForWrite(true);
     }
     void remove() {
         printf("removing %d\n", _fd);
@@ -68,7 +135,7 @@ public:
     }
 };
 
-class : Handler {
+class : public Handler {
     public:
     virtual void handleEvent(uint32_t events) override {
         if(events & EPOLLIN){
@@ -114,7 +181,7 @@ int main(int argc, char ** argv){
     epoll_ctl(epollFd, EPOLL_CTL_ADD, servFd, &ee);
     
     while(true){
-        if(-1 == epoll_wait(epollFd, &ee, 1, -1)) {
+        if(-1 == epoll_wait(epollFd, &ee, 1, -1) && errno!=EINTR) {
             error(0,errno,"epoll_wait failed");
             ctrl_c(SIGINT);
         }
@@ -152,4 +219,3 @@ void sendToAllBut(int fd, char * buffer, int count){
             client->write(buffer, count);
     }
 }
-
