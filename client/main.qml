@@ -36,7 +36,6 @@ Window {
         //Strona początkowa
         ColumnLayout {
             id: introduction
-            visible: false
 
             anchors.centerIn: parent
             spacing: 5
@@ -323,7 +322,7 @@ Window {
             width: 1200
             height: 720
             id: admin_panel
-
+            visible: false
             Layout.alignment: Qt.AlignLeft
             ColumnLayout {
                 width: 720

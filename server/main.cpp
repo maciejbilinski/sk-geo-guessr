@@ -1,12 +1,14 @@
 #include <iostream>
 #include <exception>
-#include <signal.h>
+//#include <signal.h>
+#include <csignal>
 #include "exceptions/IncorrectArguments.h"
 #include "exceptions/EpollFailed.h"
 #include "tools/readPort.h"
 #include "Server/Server.h"
 #include "Handler/Handler.h"
 #include <sys/epoll.h>
+#include <vector>
 
 // TODO: move to config file
 namespace Settings{
@@ -19,7 +21,7 @@ namespace ServerGlobal{
 }
 
 
-void close(int _ = -1){
+void close_server(int signum = -1){
     ServerGlobal::server.close();
     std::cout << "Server stopped" << std::endl;
     exit(0);
@@ -35,7 +37,7 @@ int main(int argc, char const *argv[]){
         server.start(port);
         std::cout << "Server listens on PORT " << port << std::endl;
 
-        signal(SIGINT, close);
+        signal(SIGINT, close_server);
         signal(SIGPIPE, SIG_IGN);
 
         int fd = epoll_create1(0);
@@ -52,7 +54,7 @@ int main(int argc, char const *argv[]){
         }
     }catch(std::exception& e){
         std::cerr << e.what() << std::endl;
-        close();
+        close(0);
         return -1;
     }
 }

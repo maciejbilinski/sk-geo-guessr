@@ -22,7 +22,7 @@ Server::~Server(){
 }
 
 bool Server::start(long port){
-    if(!isStarted){
+    if(!this->isStarted){
         this->fd = socket(AF_INET, SOCK_STREAM, 0);
         if(this->fd == -1) throw InaccessibleServer();
 
@@ -40,7 +40,7 @@ bool Server::start(long port){
         
         res = listen(this->fd, 1);
         if(res) throw InaccessibleServer();
-        isStarted = true;
+        this->isStarted = true;
         return true;
     }
     return false;
@@ -75,6 +75,8 @@ void Server::handleEvent(unsigned int events){
                 std::cout << "New client from: " << inet_ntoa(clientAddr.sin_addr) << ':' << ntohs(clientAddr.sin_port) << std::endl;
             }
             Client* client = new Client(clientFd, [this](Client* cl){
+                char packet[] = "state:-1;action:error;content:disconnected;";
+                write(cl->fd, packet, sizeof(packet));
                 this->clients.erase(cl);
                 delete cl;
                 if(log){
