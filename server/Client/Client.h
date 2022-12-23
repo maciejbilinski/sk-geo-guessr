@@ -2,20 +2,29 @@
 #define __Client__
 #include <exception>
 #include <functional>
-#include "../Packet/Packet.h"
+#include <optional>
 #include "../Handler/Handler.h"
+#include "../Buffer/WriteBuffer.h"
+#include "../Buffer/ReadBuffer.h"
 
-class Client : public Handler{
-    void readPackageFromFileDescriptor();
-    char *name;
-    enum team{green=0,yellow=1,orange=2,pink=3};
+class Server;
+class Client : public Handler{    
+    private:
+        void waitForWrite(bool epollout);
     protected:
-        std::function<void(Client*)> onRemove;
+        std::optional<std::string> name;
+        Server* server;
+        ReadBuffer readBuffer;
+        std::list<WriteBuffer*> writers;
+
+        void addWriter(WriteBuffer* writer);
+        void onRemove(bool send);
     public:
-        Client(int fd, std::function<void(Client*)> onRemove);
+        Client(int fd, Server* server);
 
         virtual void hookEpoll(int epollFd);
         virtual void handleEvent(unsigned int events);
+
 };
 
 

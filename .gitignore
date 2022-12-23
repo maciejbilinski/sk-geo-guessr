@@ -1,1 +1,6 @@
+# QTCreator directories
 build*
+
+# IDE & System files
+.vscode
+.DS_Store

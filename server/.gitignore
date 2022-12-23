@@ -8,6 +8,8 @@ main
 # ignore all scripts except run - later change it to CMake
 *.sh
 !run.sh
+!compile.sh
+!client.sh
 
 # Directories with headers to allow work on MacOS IDE
 sys

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <exception>
-//#include <signal.h>
 #include <csignal>
 #include "exceptions/IncorrectArguments.h"
 #include "exceptions/EpollFailed.h"
@@ -17,12 +16,12 @@ namespace Settings{
 }
 
 namespace ServerGlobal{
-    Server server;
+    Server* server = nullptr;
 }
 
 
-void close_server(int signum = -1){
-    ServerGlobal::server.close();
+void closeServer(int signum = -1){
+    delete ServerGlobal::server;
     std::cout << "Server stopped" << std::endl;
     exit(0);
 }
@@ -34,27 +33,24 @@ int main(int argc, char const *argv[]){
         if(argc != 2) throw IncorrectArguments();
         long port = readPort(argv[1]);
 
-        server.start(port);
+        server = new Server(port);
         std::cout << "Server listens on PORT " << port << std::endl;
 
-        signal(SIGINT, close_server);
+        signal(SIGINT, closeServer);
         signal(SIGPIPE, SIG_IGN);
 
         int fd = epoll_create1(0);
-    
-        server.hookEpoll(fd);
+        server->hookEpoll(fd);
 
         epoll_event ee;
 
         while(true){
             if(-1 == epoll_wait(fd, &ee, Settings::EPOLL_MAX_EVENTS, Settings::EPOLL_TIMEOUT) && errno!=EINTR)
                 throw EpollFailed();
-
             ((Handler*)ee.data.ptr)->handleEvent(ee.events);
         }
     }catch(std::exception& e){
         std::cerr << e.what() << std::endl;
-        close(0);
-        return -1;
+        closeServer(0);
     }
 }

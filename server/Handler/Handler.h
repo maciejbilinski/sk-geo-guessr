@@ -1,25 +1,22 @@
 #ifndef __Handler__
 #define __Handler__
 
-#include <cstdlib>
-#include <cstring>
+#include <iostream>
 #include <list>
-#include <unistd.h>
-#include "../Buffer.h"
+#include "../Buffer/ReadBuffer.h"
+
 class Handler{
-    
-        protected:
+    protected:
         int epollFd;
         bool hooked;
-        Buffer readBuffer;
-        std::list<Buffer> dataToWrite;
-
-    public:
         int fd;
+        
         Handler();
+    public:
+        int getFD();
         virtual void handleEvent(unsigned int events) = 0;
         virtual void hookEpoll(int epollFd);
-        ~Handler();
+        virtual ~Handler();
 };
 
 

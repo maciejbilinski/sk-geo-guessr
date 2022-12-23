@@ -67,21 +67,21 @@ public:
     int fd() const {return _fd;}
     virtual void handleEvent(uint32_t events) override {
         if(events & EPOLLIN) {
-            ssize_t count = read(_fd, readBuffer.dataPos(), readBuffer.remaining());
+            ssize_t count = read(_fd, readBuffer.dataPos(), readBuffer.remaining()); // odczytaj sobie maksymalnie remaining znaków
             if(count <= 0)
                 events |= EPOLLERR;
-            else {
-                readBuffer.pos += count;
-                char * eol = (char*) memchr(readBuffer.data, '\n', readBuffer.pos);
-                if(eol == nullptr) {
-                    if(0 == readBuffer.remaining())
+            else { // coś tam przyszło
+                readBuffer.pos += count; // pos to tak naprawdę indeks za ostatnim znakiem
+                char * eol = (char*) memchr(readBuffer.data, '\n', readBuffer.pos); // zwraca wsk na znak nowej linii
+                if(eol == nullptr) { // nie ma nowej linii - niepełna wiadomość, może reszta przyjdzie później
+                    if(0 == readBuffer.remaining()) // nie ma miejsca na resztę wiadomości, więc zwiększam bufor
                         readBuffer.doube();
-                } else {
+                } else { // znaleziono co najmniej jeden pakiet
                     do {
                         auto thismsglen = eol - readBuffer.data + 1;
-                        sendToAllBut(_fd, readBuffer.data, thismsglen);
+                        sendToAllBut(_fd, readBuffer.data, thismsglen); // wyślij wszystkim oprócz mnie wiadomość od klienta - implementacja chatu
                         auto nextmsgslen =  readBuffer.pos - thismsglen;
-                        memmove(readBuffer.data, eol+1, nextmsgslen);
+                        memmove(readBuffer.data, eol+1, nextmsgslen);  
                         readBuffer.pos = nextmsgslen;
                     } while((eol = (char*) memchr(readBuffer.data, '\n', readBuffer.pos)));
                 }

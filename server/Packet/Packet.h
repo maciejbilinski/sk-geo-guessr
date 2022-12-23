@@ -1,20 +1,21 @@
 #ifndef __Packet__
 #define __Packet__
 
-#include <string>
-#include "../Buffer.h"
-        enum game_state{intro=0,voting=1,admin_panel=2,game=3,status=4};
-class Packet{
-    public:
-        int state;
-        char *action;
-        char * content;
+#include <iostream>
+#include "../enums/GameState/GameState.h"
 
-        Packet(int game_state,char *action,char * content);
-        Packet();
-        ~Packet();
-        void print();
-        int fromBuforToPacket(int fd,Buffer *readBuffer);
+class Packet{
+   public:
+        GameState state;
+        std::string action;
+        std::string content;
+
+        Packet(GameState gameState, std::string action, std::string content);
+        Packet(std::string str);
+        std::string toString() const;
+        void print() const;
+        
+
 };
 #endif
 
