@@ -1,7 +1,7 @@
-#ifndef __Team__
-#define __Team__
+#ifndef __TeamEnum__
+#define __TeamEnum__
 
-enum Team{
+enum TeamEnum{
     GREEN = 0,
     YELLOW = 1,
     ORANGE = 2,

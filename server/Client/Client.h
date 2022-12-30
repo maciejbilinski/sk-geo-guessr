@@ -13,6 +13,9 @@ class Client : public Handler{
         void waitForWrite(bool epollout);
     protected:
         std::optional<std::string> name;
+        int team_affilation;
+        double coords[2];
+
         Server* server;
         ReadBuffer readBuffer;
         std::list<WriteBuffer*> writers;

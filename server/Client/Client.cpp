@@ -20,6 +20,7 @@ Client::Client(int fd, Server* server):
 {
     this->fd = fd;
     this->name = std::nullopt;
+    server->geoguessrGame.time_counter=93;
 }
 
 void Client::hookEpoll(int epollFd){
@@ -65,6 +66,7 @@ void Client::onRemove(bool send){
     }else{
         this->server->onClientRemove(this);
     }
+    this->server->geoguessrGame.removePlayer(this->fd);
 }
 
 void Client::waitForWrite(bool epollout) {

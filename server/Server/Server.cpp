@@ -30,6 +30,7 @@ Server::Server(long port, bool log) : log{log} {
     
     res = listen(this->fd, 1);
     if(res) throw InaccessibleServer();
+    this->geoguessrGame.setup();
 }
 
 Server::~Server(){
