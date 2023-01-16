@@ -27,10 +27,17 @@ void ServerTools::quit()
         this->name = "";
         _socket.abort();
         _socket.close();
+        _players.clear();
+        emit playersChanged();
     }
     _state = CLIENT_STATE::INTRO;
     emit stateChanged(_state);
 
+}
+
+void ServerTools::vote(QString player, QString team)
+{
+    _socket.write(("My vote: " + player + ";My team: " + team + "\n").toLocal8Bit());
 }
 
 void ServerTools::connected()
@@ -55,15 +62,40 @@ void ServerTools::bytesWritten(qint64 bytes)
 void ServerTools::readyRead()
 {
     qDebug() << "reading...";
-    QString data(_socket.readAll());
-    qDebug() << data;
-
-    if(data == "add player"){
-        _state = CLIENT_STATE::VOTING;
-        emit stateChanged(_state);
-    }else if(data == "waiting for game"){
-        _state = CLIENT_STATE::WAIT_FOR_GAME;
-        emit stateChanged(_state);
+    QString d(_socket.readAll());
+    QStringList pieces = d.split( "\n" );
+    for(int i=0; i<pieces.size(); i++){
+        QString data = pieces.at(i);
+        qDebug() << data;
+        if(data == "add player"){
+            _state = CLIENT_STATE::VOTING;
+            _players.append(name);
+            emit playersChanged();
+            emit stateChanged(_state);
+        }else if(data == "waiting for game"){
+            _state = CLIENT_STATE::WAIT_FOR_GAME;
+            emit stateChanged(_state);
+        }else if(data.contains("new player: ")){ // po polaczeniu serwer powinien do nowego gracza wyslac kilka takich komunikatow
+            QString playerName = data.mid(12);
+            _players.append(playerName);
+            emit playersChanged();
+        }else if(data.contains("del player: ")){
+            QString playerName = data.mid(12);
+            _players.removeAll(playerName);
+            emit playersChanged();
+        }else if(data == "ok vote"){
+            _state = CLIENT_STATE::WAIT_FOR_RANKING;
+            emit stateChanged(_state);
+        }else if(data.contains("ranking: ")){
+            QString rank = data.mid(9);
+            QStringList ranks = rank.split( ";" );
+            _ranking.clear();
+            for(int j=0; j<ranks.size(); j++){
+                QString r = ranks.at(j);
+                _ranking.append(r);
+            }
+            emit rankingChanged();
+        }
     }
 }
 
@@ -74,5 +106,7 @@ void ServerTools::socketError()
     _socket.abort();
     _socket.close();
     _state = CLIENT_STATE::ERROR;
+    _players.clear();
+    emit playersChanged();
     emit stateChanged(_state);
 }

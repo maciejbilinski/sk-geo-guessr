@@ -33,6 +33,18 @@ Window {
         name: "osm"
     }
 
+    function _timer() {
+        return Qt.createQmlObject("import QtQuick 2.0; Timer {}", root);
+    }
+
+    function setTimeout(cb, delayTime) {
+        var timer = _timer();
+        timer.interval = delayTime;
+        timer.repeat = false;
+        timer.triggered.connect(cb);
+        timer.start();
+    }
+
     ServerTools{
         id: serverTools
         onStateChanged: function(state){
@@ -55,7 +67,23 @@ Window {
                 waiting_for_game.visible = true;
             }else if(state === ServerTools.VOTING){
                 choose_team_and_host.visible = true;
+            }else if(state === ServerTools.WAIT_FOR_RANKING){
+                waiting_for_game_ranking.visible = true;
             }
+        }
+        onPlayersChanged: function(){
+            vote_host_combobox.clear();
+            serverTools.players.forEach(function(player){
+                vote_host_combobox.append({"text": player})
+            });
+        }
+        onRankingChanged: function(){
+            setTimeout(function(){
+                rankingModel.clear();
+                serverTools.ranking.forEach(function(playerName, index){
+                    rankingModel.append({"rank": index+1, "playerName": playerName})
+                });
+            }, 500);
         }
 
 
@@ -68,7 +96,7 @@ Window {
         //Strona początkowa
         ColumnLayout {
             id: introduction
-
+            visible: true
             anchors.centerIn: parent
             spacing: 5
             Text {
@@ -137,8 +165,8 @@ Window {
                 enabled: nameTF.text.length > 0
                 onClicked: function () {
                     introduction.visible = false
-                    serverTools.connect(nameTF.text, parseInt(serverCB.currentText));
                     loader.visible = true
+                    serverTools.connect(nameTF.text, parseInt(serverCB.currentText));
                 }
             }
             Text {
@@ -209,13 +237,11 @@ Window {
                     color: "#FFF"
                 }
                 ComboBox {
+                    id: cpCB
                     Layout.alignment: Qt.AlignCenter
                     Layout.preferredWidth: controlWidth
                     model: ListModel {
                         id: vote_host_combobox
-                        ListElement {
-                            text: "None"
-                        }
                     }
                 }
             }
@@ -230,6 +256,7 @@ Window {
                 ComboBox {
                     Layout.alignment: Qt.AlignCenter
                     Layout.preferredWidth: controlWidth
+                    id: ctCB
                     model: ListModel {
                         id: choose_team_combobox
                         ListElement {
@@ -249,18 +276,20 @@ Window {
             }
             Button {
                 id: set_ready_status
+                enabled: cpCB.currentText !== ""
                 Layout.alignment: Qt.AlignCenter
                 Layout.margins: 2 * buttonMargin
                 text: qsTr("Send and set ready status")
                 palette.buttonText: "#FFF"
                 background: Rectangle {
-                    color: "#9a9ef9"
+                    color: enabled ? (set_ready_status.down ? "#898DE8" : "#9a9ef9") : "#AAA"
                     radius: 2
                 }
                 padding: buttonPadding
                 onClicked: function () {
                     choose_team_and_host.visible = false
-                    waiting_for_game_ranking.visible = true
+                    loader.visible = true
+                    serverTools.vote(cpCB.currentText, ctCB.currentText)
                 }
             }
         }
@@ -270,6 +299,7 @@ Window {
             id: waiting_for_game_ranking
             visible: false
             anchors.centerIn: parent
+            Layout.fillWidth: parent
             Text {
                 Layout.alignment: Qt.AlignCenter
                 padding: headerPadding
@@ -289,11 +319,28 @@ Window {
                 font.pointSize: 30
                 color: "#C1C1C4"
             }
-            Text {
-                text: qsTr("1. Andrzej")
-                font.pointSize: 18
-                color: "#ffffff"
+
+            ListModel{
+                id: rankingModel
             }
+            Component {
+               id: rankingDelegate
+               Text {
+                   text: qsTr(rank + ". " + playerName)
+                   font.pointSize: 18
+                   color: "#ffffff"
+               }
+
+            }
+            ListView {
+                model: rankingModel
+                delegate: rankingDelegate
+                Layout.fillWidth: parent
+
+                height: childrenRect.height
+
+            }
+
         }
 
         //Ekran gry
