@@ -7,6 +7,8 @@ import QtQuick.Controls 2.15
 import QtPositioning 5.15
 import QtLocation 5.15
 
+import put.geoguessr.ServerTools 1.0
+
 Window {
     property string bgColor: "#1E1E1E"
     property int headerFontSize: 40
@@ -23,16 +25,46 @@ Window {
     minimumHeight: 720
     maximumWidth: 1280
     maximumHeight: 720
-    Plugin {
-        id: mapPlugin
-        name: "osm" // "mapboxgl", "esri", ...
-    }
     visible: true
     title: qsTr("GeoGuessr")
+
+    Plugin {
+        id: mapPlugin
+        name: "osm"
+    }
+
+    ServerTools{
+        id: serverTools
+        onStateChanged: function(state){
+            introduction.visible = false;
+            loader.visible = false;
+            choose_team_and_host.visible = false;
+            waiting_for_game_ranking.visible = false;
+            game.visible = false;
+            admin_panel.visible = false;
+            introError.visible = false;
+            waiting_for_game.visible = false;
+
+            if(state <= 0){
+                introduction.visible = true;
+                if(state === ServerTools.ERROR){
+                    introError.visible = true;
+                }
+            }else if(state === ServerTools.WAIT_FOR_GAME){
+                loader.visible = true;
+                waiting_for_game.visible = true;
+            }else if(state === ServerTools.VOTING){
+                choose_team_and_host.visible = true;
+            }
+        }
+
+
+    }
 
     Rectangle {
         anchors.fill: parent
         color: bgColor
+
         //Strona początkowa
         ColumnLayout {
             id: introduction
@@ -56,10 +88,10 @@ Window {
                     font.pointSize: labelFontSize
                 }
                 ComboBox {
+                    id: serverCB
                     Layout.alignment: Qt.AlignLeft
                     Layout.preferredWidth: controlWidth
                     model: ListModel {
-                        id: serverCB
                         ListElement {
                             text: "50000"
                         }
@@ -105,8 +137,17 @@ Window {
                 enabled: nameTF.text.length > 0
                 onClicked: function () {
                     introduction.visible = false
+                    serverTools.connect(nameTF.text, parseInt(serverCB.currentText));
                     loader.visible = true
                 }
+            }
+            Text {
+                Layout.alignment: Qt.AlignCenter
+                Layout.preferredWidth: controlWidth
+                id: introError
+                text: qsTr("Błąd serwera. Spróbuj ponownie.")
+                color: "#e53935"
+                visible: false
             }
         }
 
@@ -125,6 +166,7 @@ Window {
                 id: waiting_for_game
                 text: qsTr("Game has already started, waiting for next round")
                 color: "#ffffff"
+                visible: false
             }
             Button {
                 id: cancel
@@ -139,11 +181,11 @@ Window {
                 }
                 padding: buttonPadding
                 onClicked: function () {
-                    choose_team_and_host.visible = true
-                    loader.visible = false
+                    serverTools.quit();
                 }
             }
         }
+
         //Głosowanie i wybieranie druzyny
         ColumnLayout {
             id: choose_team_and_host
@@ -222,6 +264,7 @@ Window {
                 }
             }
         }
+
         //Oczekiwanie na hosta
         ColumnLayout {
             id: waiting_for_game_ranking
@@ -252,6 +295,7 @@ Window {
                 color: "#ffffff"
             }
         }
+
         //Ekran gry
         GridLayout {
             width: 1200
@@ -317,6 +361,7 @@ Window {
                 }
             }
         }
+
         //Ekran hosta
         GridLayout {
             width: 1200
