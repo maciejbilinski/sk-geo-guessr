@@ -37,7 +37,13 @@ void ServerTools::quit()
 
 void ServerTools::vote(QString player, QString team)
 {
+    _team = team;
     _socket.write(("My vote: " + player + ";My team: " + team + "\n").toLocal8Bit());
+}
+
+void ServerTools::sendPhoto(QString photo, double latitude, double longitude)
+{
+    _socket.write(("Round: " + photo + ";Coords: " + QString::number(latitude) + ";" + QString::number(longitude) + "\n").toLocal8Bit());
 }
 
 void ServerTools::connected()
@@ -95,6 +101,14 @@ void ServerTools::readyRead()
                 _ranking.append(r);
             }
             emit rankingChanged();
+        }else if(data.contains("game start: ")){
+            _round = 1;
+            QString role = data.mid(12);
+            if(role == "host"){
+                _state = CLIENT_STATE::ADMIN_PANEL;
+                emit stateChanged(_state);
+            }
+
         }
     }
 }

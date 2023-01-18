@@ -13,12 +13,13 @@ public:
     Q_INVOKABLE void connect(QString name, int port);
     Q_INVOKABLE void quit();
     Q_INVOKABLE void vote(QString player, QString team);
+    Q_INVOKABLE void sendPhoto(QString photo, double latitude, double longitude);
 
     enum CLIENT_STATE {
         ERROR = -1, // error occurs
         INTRO = 0, // in intro view
         VOTING = 1, // in voting view
-        ADMIN_PANEL = 2,
+        ADMIN_PANEL = 2,  // in game as host
         GAME = 3,
         STATUS = 4,
         WAIT_FOR_GAME = 5, // game is already started
@@ -28,7 +29,8 @@ public:
 
     Q_PROPERTY(CLIENT_STATE state MEMBER _state NOTIFY stateChanged);
     Q_PROPERTY(QVector<QString> players MEMBER _players NOTIFY playersChanged);
-    Q_PROPERTY(QVector<QString> ranking MEMBER _ranking NOTIFY rankingChanged);
+    Q_PROPERTY(QVector<QString> ranking MEMBER _ranking NOTIFY rankingChanged);        
+    Q_PROPERTY(int round MEMBER _round);
 
 signals:
     void stateChanged(ServerTools::CLIENT_STATE);
@@ -47,6 +49,8 @@ private:
     CLIENT_STATE _state;
     QVector<QString> _players;
     QVector<QString> _ranking;
+    QString _team;
+    int _round;
 
 };
 

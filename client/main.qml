@@ -18,6 +18,9 @@ Window {
     property int buttonMargin: 20
     property int buttonPadding: 15
 
+    property string noPhoto: "https://t4.ftcdn.net/jpg/04/70/29/97/360_F_470299797_UD0eoVMMSUbHCcNJCdv2t8B2g1GVqYgs.jpg";
+    property string errorPhoto: "https://www.salonlfc.com/wp-content/uploads/2018/01/image-not-found-1-scaled-1150x647.png"
+
     id: root
     width: 1280
     height: 720
@@ -35,6 +38,16 @@ Window {
 
     function _timer() {
         return Qt.createQmlObject("import QtQuick 2.0; Timer {}", root);
+    }
+
+    function countChar(word, c) {
+      var count = 0
+      for (let i = 0; i <= word.length; i++) {
+        if (c.includes(word.charCodeAt(i))) {
+          count += 1
+        }
+      }
+      return count;
     }
 
     function setTimeout(cb, delayTime) {
@@ -69,6 +82,8 @@ Window {
                 choose_team_and_host.visible = true;
             }else if(state === ServerTools.WAIT_FOR_RANKING){
                 waiting_for_game_ranking.visible = true;
+            }else if(state === ServerTools.ADMIN_PANEL){
+                admin_panel.visible = true;
             }
         }
         onPlayersChanged: function(){
@@ -91,6 +106,8 @@ Window {
 
     Rectangle {
         anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         color: bgColor
 
         //Strona początkowa
@@ -410,101 +427,129 @@ Window {
         }
 
         //Ekran hosta
-        GridLayout {
-            width: 1200
-            height: 720
+        Row {
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 10
             id: admin_panel
             visible: false
-            Layout.alignment: Qt.AlignLeft
-            ColumnLayout {
-                width: 720
+            Column {
+                width: parent.width*0.75 - 5
+                height: parent.height
 
-                Item {
-                    height: 120
-                    width: 800
-                    Layout.alignment: Qt.AlignCenter
-
-                    Text {
-                        id: admin_header
-                        color: "#FFF"
-                        anchors.centerIn: parent
-                        text: "Host panel"
-                        font.pointSize: headerFontSize
-                        Layout.alignment: Qt.AlignCenter
-                    }
+                Text {
+                    id: admin_header
+                    color: "#FFF"
+                    text: "Host panel"
+                    font.pointSize: headerFontSize
+                    anchors.horizontalCenter: parent.horizontalCenter
                 }
+
+                ListModel {
+                    id: marker
+                    dynamicRoles: true
+                }
+
                 Map {
-                    height: 600
-                    width: 800
+                    width: parent.width
+                    height: parent.height-admin_header.height
                     plugin: mapPlugin
                     id: map_admin
                     center: QtPositioning.coordinate(52.40371, 16.9495) // PP <3
                     zoomLevel: 20
-                }
-            }
-            ColumnLayout {
-                width: 460
-                height: 720
-                Layout.alignment: Qt.AlignTop
-                Item {
-                    height: 120
-                    width: 470
-                    Text {
-                        anchors.centerIn: parent
-                        id: round_counter_admin
-                        text: qsTr("Runda X")
-                        color: "#FFF"
-                    }
-                }
-                Item {
-                    height: 300
-                    width: 460
-                    Layout.alignment: Qt.AlignCenter
-                    Image {
-                        id: photo_preview
-                        width: 460
-                        height: 300
-                        sourceSize.width: 480
-                        sourceSize.height: 300
-                        Layout.alignment: Qt.AlignCenter
 
-                        fillMode: Image.PreserveAspectFit
-                        source: "https://i.ytimg.com/vi/abUhPANjIsM/maxresdefault.jpg"
+                    MapItemView{
+                        model: marker
+                        delegate: MapQuickItem {
+                            coordinate: model.position
+                            anchorPoint.x: marker_img.width * 0.5
+                            anchorPoint.y: marker_img.height
+                            sourceItem: Image {
+                                id: marker_img
+                                source: "marker.png"
+                            }
+                        }
                     }
-                }
-                Item {
-                    height: 50
-                    width: 470
-                    Text {
-                        anchors.centerIn: parent
-                        text: qsTr("Paste here photo url")
-                        color: "#FFF"
-                    }
-                }
-                Item {
-                    height: 100
-                    width: 470
 
-                    Rectangle {
+                    MouseArea{
                         anchors.fill: parent
-                        color: '#ffffff'
-                        TextEdit {
-                            id: photo_url
-                            width: 470
-                            focus: true
-                            wrapMode: TextEdit.WrapAnywhere
+                        onClicked: {
+                            var coord = map_admin.toCoordinate(Qt.point(mouse.x,mouse.y));
+                            marker.clear();
+                            marker.append({"position": coord})
                         }
                     }
                 }
-                RowLayout {
-                    height: 100
-                    width: 460
+            }
+            Column {
+                width: parent.width*0.25 - 5
+                height: parent.height
+
+                Text {
+                    id: round_counter_admin
+                    text: qsTr("Runda " + ServerTools.round)
+                    color: "#FFF"
+
+                    font.pointSize: headerFontSize
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+                Image {
+                    id: photo_preview
+                    sourceSize.width: parent.width
                     Layout.alignment: Qt.AlignCenter
+
+                    fillMode: Image.PreserveAspectFit
+                    source: noPhoto
+                    onStatusChanged: function(){
+                        if(this.status === Image.Error || this.status === Image.Null){
+                            this.source = errorPhoto
+                        }
+                    }
+                }
+                Column{
+                    width: parent.width
+                    height: parent.height - photo_preview.height - round_counter_admin.height - admin_panel_btns.height
+                    Text {
+                        id: paste_url_text
+                        Layout.alignment: Qt.AlignCenter
+                        text: qsTr("Paste here photo url")
+                        color: "#FFF"
+                    }
+                    Rectangle {
+                        property real teMaxHeight: parent.height - paste_url_text.height;
+                        width: parent.width
+                        color: '#ffffff'
+                        height: photo_url.height > teMaxHeight ? teMaxHeight : photo_url.height
+                        TextEdit {
+                            width: parent.width
+                            id: photo_url
+                            focus: true
+                            wrapMode: TextEdit.WrapAnywhere
+                            onTextChanged: function(e){
+                                var save = photo_url.cursorPosition;
+                                const newlines = countChar(photo_url.text.substring(0, save), [10, 9])
+                                if(newlines !== 0){
+                                    photo_url.text = photo_url.text.replace(String.fromCharCode(10), '');                                    photo_url.cursorPosition = save > 256 ? 256 : save;
+                                    photo_url.text = photo_url.text.replace(String.fromCharCode(9), '');                                    photo_url.cursorPosition = save > 256 ? 256 : save;
+                                    save -= newlines;
+                                }
+
+                                if(photo_url.length >= 256){
+                                    photo_url.text = photo_url.text.substring(0, 256)
+                                }
+
+                                photo_url.cursorPosition = save > 256 ? 256 : save;
+                            }
+                        }
+                    }
+                }
+                Row{
+                    id: admin_panel_btns
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 10
 
                     Button {
                         id: preview_photo
-                        Layout.alignment: Qt.AlignCenter
-                        Layout.margins: 2 * buttonMargin
                         text: qsTr("Preview")
                         palette.buttonText: "#FFF"
                         background: Rectangle {
@@ -512,23 +557,30 @@ Window {
                             radius: 2
                         }
                         padding: buttonPadding
-                        onClicked: function () {//                            choose_team_and_host.visible = false
-                            //                            waiting_for_game_ranking.visible = true
+                        onClicked: function () {
+                            photo_preview.source = photo_url.text
                         }
                     }
                     Button {
                         id: ok_button
-                        Layout.alignment: Qt.AlignCenter
-                        Layout.margins: 2 * buttonMargin
                         text: qsTr("Start")
+                        enabled: [noPhoto, errorPhoto].every(function(a){
+                            return a != photo_preview.source
+                        }) && marker.count === 1
+
                         palette.buttonText: "#FFF"
                         background: Rectangle {
-                            color: "#9a9ef9"
+                            color: enabled ? (submit.down ? "#898DE8" : "#9a9ef9") : "#AAA"
                             radius: 2
                         }
                         padding: buttonPadding
-                        onClicked: function () {//choose_team_and_host.visible = false
-                            //waiting_for_game_ranking.visible = true
+                        onClicked: function () {
+                            const coords = marker.get(0);
+                            serverTools.sendPhoto(photo_preview.source, coords.position.latitude, coords.position.longitude)
+                            photo_url.text = ""
+                            photo_url.focus = true
+                            photo_preview.source = noPhoto
+                            marker.clear()
                         }
                     }
                 }
