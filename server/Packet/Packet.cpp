@@ -52,7 +52,7 @@ Packet::Packet(GameState gameState, std::string action, std::string content){
 
 std::string Packet::toString() const{
     std::stringstream ss;
-    ss << "s:" << this->state << " o:" << this->action << " c:" << this->content << std::endl;
+    ss << this->content << std::endl;
     return ss.str();
 }
 
