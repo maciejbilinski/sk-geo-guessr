@@ -3,6 +3,9 @@
 
 #include <QObject>
 #include <QTcpSocket>
+#include <QMap>
+#include <QPointF>
+#include <QTimer>
 
 class ServerTools : public QObject
 {
@@ -14,6 +17,7 @@ public:
     Q_INVOKABLE void quit();
     Q_INVOKABLE void vote(QString player, QString team);
     Q_INVOKABLE void sendPhoto(QString photo, double latitude, double longitude);
+    Q_INVOKABLE void sendAnswer(double latitude, double longitude);
 
     enum CLIENT_STATE {
         ERROR = -1, // error occurs
@@ -30,18 +34,30 @@ public:
     Q_PROPERTY(CLIENT_STATE state MEMBER _state NOTIFY stateChanged);
     Q_PROPERTY(QVector<QString> players MEMBER _players NOTIFY playersChanged);
     Q_PROPERTY(QVector<QString> ranking MEMBER _ranking NOTIFY rankingChanged);        
-    Q_PROPERTY(int round MEMBER _round);
+    Q_PROPERTY(int round MEMBER _round NOTIFY roundChanged);
+    Q_PROPERTY(QString me MEMBER name NOTIFY meChanged);
+    Q_PROPERTY(QVariantMap answers MEMBER _answers NOTIFY answersChanged);
+    Q_PROPERTY(QString photoURL MEMBER _photoURL NOTIFY photoURLChanged);
+    Q_PROPERTY(int timeLeft MEMBER _timeLeft NOTIFY timeLeftChanged);
 
 signals:
     void stateChanged(ServerTools::CLIENT_STATE);
     void playersChanged();
     void rankingChanged();
+    void roundChanged();
+    void meChanged();
+    void answersChanged();
+    void photoURLChanged();
+    void timeLeftChanged();
+
 public slots:
     void connected();
     void disconnected();
     void bytesWritten(qint64 bytes);
     void readyRead();
     void socketError();
+private slots:
+    void updateTimeLeft();
 
 private:
     QTcpSocket  _socket;
@@ -51,7 +67,12 @@ private:
     QVector<QString> _ranking;
     QString _team;
     int _round;
+    QVariantMap _answers;
+    QString _photoURL;
+    int _timeLeft;
 
+
+    QTimer timer;
 };
 
 #endif // SERVERTOOLS_H

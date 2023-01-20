@@ -21,6 +21,8 @@ Window {
     property string noPhoto: "https://t4.ftcdn.net/jpg/04/70/29/97/360_F_470299797_UD0eoVMMSUbHCcNJCdv2t8B2g1GVqYgs.jpg";
     property string errorPhoto: "https://www.salonlfc.com/wp-content/uploads/2018/01/image-not-found-1-scaled-1150x647.png"
 
+    property bool alreadyAnswered: false;
+
     id: root
     width: 1280
     height: 720
@@ -84,6 +86,9 @@ Window {
                 waiting_for_game_ranking.visible = true;
             }else if(state === ServerTools.ADMIN_PANEL){
                 admin_panel.visible = true;
+            }else if(state === ServerTools.GAME){
+                alreadyAnswered = false;
+                game.visible = true;
             }
         }
         onPlayersChanged: function(){
@@ -99,6 +104,40 @@ Window {
                     rankingModel.append({"rank": index+1, "playerName": playerName})
                 });
             }, 500);
+        }
+        onRoundChanged: function(){
+            if(serverTools.state === ServerTools.GAME){
+                game_markers.clear();
+                alreadyAnswered = false;
+
+                introduction.visible = false;
+                loader.visible = false;
+                choose_team_and_host.visible = false;
+                waiting_for_game_ranking.visible = false;
+                game.visible = true;
+                admin_panel.visible = false;
+                introError.visible = false;
+                waiting_for_game.visible = false;
+            }
+
+        }
+        onAnswersChanged: function(){
+            var min = 0;
+            if(game_markers.count > 0){
+                if(game_markers.get(0).id === serverTools.me){
+                    min = 1;
+                }
+            }
+
+            for(var i=game_markers.count-1; i>=min; i--){
+                game_markers.remove(i);
+            }
+            Object.keys(serverTools.answers).forEach(function(key){
+                game_markers.insert(min, {
+                    "position": QtPositioning.coordinate(serverTools.answers[key].x, serverTools.answers[key].y), "id": key
+                });
+                min++;
+            });
         }
 
 
@@ -361,70 +400,120 @@ Window {
         }
 
         //Ekran gry
-        GridLayout {
-            width: 1200
-            height: 720
+        Row {
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 10
             id: game
             visible: false
+            Column {
+                width: parent.width*0.75 - 5
+                height: parent.height
 
-            Layout.alignment: Qt.AlignLeft
-            ColumnLayout {
-                width: 720
-
-                Item {
-                    height: 120
-                    width: 800
-                    Layout.alignment: Qt.AlignCenter
-
-                    Text {
-                        id: time
-                        color: "#FFF"
-                        anchors.centerIn: parent
-                        text: "Pozostały czas: 997s"
-                        Layout.alignment: Qt.AlignCenter
-                    }
+                Text {
+                    id: time
+                    color: "#FFF"
+                    text: qsTr("Pozostały czas: " + serverTools.timeLeft + "s")
+                    font.pointSize: headerFontSize
+                    anchors.horizontalCenter: parent.horizontalCenter
                 }
+
+                ListModel {
+                    id: game_markers
+                    dynamicRoles: true
+                }
+
                 Map {
-                    height: 600
-                    width: 800
+                    width: parent.width
+                    height: parent.height-time.height
                     plugin: mapPlugin
-                    id: map
+                    id: map_game
                     center: QtPositioning.coordinate(52.40371, 16.9495) // PP <3
                     zoomLevel: 20
+
+                    MapItemView{
+                        model: game_markers
+                        delegate: MapQuickItem {
+                            coordinate: model.position
+                            anchorPoint.x: game_marker_img.width * 0.5
+                            anchorPoint.y: game_marker_img.height
+                            sourceItem: Column{
+                                Text{
+                                    text: model.id
+                                }
+
+                                Image {
+                                    id: game_marker_img
+                                    source: "marker.png"
+                                }
+                            }
+                        }
+                    }
+
+                    MouseArea{
+                        anchors.fill: parent
+                        onClicked: {
+                            var coord = map_game.toCoordinate(Qt.point(mouse.x,mouse.y));
+                            if(game_markers.count > 0){
+                                if(game_markers.get(0).id === serverTools.me){
+                                    game_markers.remove(0);
+                                }
+                            }
+
+                            game_markers.insert(0, {"position": coord, "id": serverTools.me})
+                        }
+                    }
                 }
             }
-            ColumnLayout {
-                width: 460
-                height: 720
-                Layout.alignment: Qt.AlignTop
-                Item {
-                    height: 120
-                    width: 470
-                    Text {
-                        anchors.centerIn: parent
-                        id: round
-                        text: qsTr("Runda X")
-                        color: "#FFF"
-                    }
-                }
-                Item {
-                    height: 600
-                    width: 460
-                    Layout.alignment: Qt.AlignCenter
-                    Image {
-                        id: photo
-                        width: 460
-                        height: 600
-                        sourceSize.width: 480
-                        sourceSize.height: 600
-                        Layout.alignment: Qt.AlignCenter
+            Column {
+                width: parent.width*0.25 - 5
+                height: parent.height
 
-                        fillMode: Image.PreserveAspectFit
-                        source: "https://i.ytimg.com/vi/abUhPANjIsM/maxresdefault.jpg"
+                Text {
+                    id: round_counter_game
+                    text: qsTr("Runda " + serverTools.round)
+                    color: "#FFF"
+
+                    font.pointSize: headerFontSize
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+                Image {
+                    id: photo_challenge
+                    sourceSize.width: parent.width
+                    Layout.alignment: Qt.AlignCenter
+
+                    fillMode: Image.PreserveAspectFit
+                    source: serverTools.photoURL
+                }
+
+                Rectangle{
+                    width: parent.width
+                    height: parent.height - round_counter_game.height-photo_challenge.height-challenge_button.height
+                    color: bgColor
+                }
+
+                Button {
+                    id: challenge_button
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: qsTr("Answer")
+                    enabled: game_markers.count > 0 && game_markers.get(0).id === serverTools.me && !alreadyAnswered && serverTools.timeLeft > 0
+
+                    palette.buttonText: "#FFF"
+                    background: Rectangle {
+                        color: enabled ? (challenge_button.down ? "#898DE8" : "#9a9ef9") : "#AAA"
+                        radius: 2
+                    }
+                    padding: buttonPadding
+                    onClicked: function () {
+                        const coords = game_markers.get(0);
+                        serverTools.sendAnswer(coords.position.latitude, coords.position.longitude)
+                        alreadyAnswered = true
                     }
                 }
+
             }
         }
+
 
         //Ekran hosta
         Row {
@@ -487,7 +576,7 @@ Window {
 
                 Text {
                     id: round_counter_admin
-                    text: qsTr("Runda " + ServerTools.round)
+                    text: qsTr("Runda " + serverTools.round)
                     color: "#FFF"
 
                     font.pointSize: headerFontSize
@@ -570,7 +659,7 @@ Window {
 
                         palette.buttonText: "#FFF"
                         background: Rectangle {
-                            color: enabled ? (submit.down ? "#898DE8" : "#9a9ef9") : "#AAA"
+                            color: enabled ? (ok_button.down ? "#898DE8" : "#9a9ef9") : "#AAA"
                             radius: 2
                         }
                         padding: buttonPadding

@@ -1,15 +1,20 @@
 #include "servertools.h"
 #include <QDebug>
 #include <QHostAddress>
-ServerTools::ServerTools(QObject* parent) : QObject(parent)
+#include <QDateTime>
+ServerTools::ServerTools(QObject* parent) : QObject(parent), timer(this)
 {
     _state = CLIENT_STATE::INTRO;
+    timer.setInterval(1000);
+    QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(updateTimeLeft()));
+
 }
 
 void ServerTools::connect(QString name, int port)
 {
     if(_state <= 0){
         this->name = name;
+        emit meChanged();
         QObject::connect(&_socket, SIGNAL(connected()),this, SLOT(connected()));
         QObject::connect(&_socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
         QObject::connect(&_socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
@@ -25,6 +30,7 @@ void ServerTools::quit()
 {
     if(_state <= 0){
         this->name = "";
+        emit meChanged();
         _socket.abort();
         _socket.close();
         _players.clear();
@@ -44,6 +50,11 @@ void ServerTools::vote(QString player, QString team)
 void ServerTools::sendPhoto(QString photo, double latitude, double longitude)
 {
     _socket.write(("Round: " + photo + ";Coords: " + QString::number(latitude) + ";" + QString::number(longitude) + "\n").toLocal8Bit());
+}
+
+void ServerTools::sendAnswer(double latitude, double longitude)
+{
+    _socket.write(("Answer: " + QString::number(_round) + ";Coords: " + QString::number(latitude) + ";" + QString::number(longitude) + "\n").toLocal8Bit());
 }
 
 void ServerTools::connected()
@@ -103,12 +114,40 @@ void ServerTools::readyRead()
             emit rankingChanged();
         }else if(data.contains("game start: ")){
             _round = 1;
+            emit roundChanged();
             QString role = data.mid(12);
             if(role == "host"){
                 _state = CLIENT_STATE::ADMIN_PANEL;
                 emit stateChanged(_state);
+            }else if(role.contains("game;")){
+                QStringList subdata = role.mid(5).split(";");
+                _photoURL = subdata[0];
+                _timeLeft = (subdata[1].toLongLong()-QDateTime::currentMSecsSinceEpoch())/1000;
+                timer.stop();
+                timer.start();
+                _state = CLIENT_STATE::GAME;
+                emit timeLeftChanged();
+                emit photoURLChanged();
+                emit stateChanged(_state);
             }
-
+        }else if(data.contains("new round: ")){
+            QString round = data.mid(11);
+            QStringList roundData = round.split(";");
+            _round = roundData[0].toInt();
+            _answers.clear();
+            _photoURL = roundData[1];
+            _timeLeft = (roundData[2].toLongLong()-QDateTime::currentMSecsSinceEpoch())/1000;
+            timer.stop();
+            timer.start();
+            emit timeLeftChanged();
+            emit photoURLChanged();
+            emit answersChanged();
+            emit roundChanged();
+        }else if(data.contains("new answer: ")){
+            QString answer = data.mid(12);
+            QStringList answerData = answer.split(";");
+            _answers[answerData[0]] = QPointF(answerData[1].toDouble(), answerData[2].toDouble());
+            emit answersChanged();
         }
     }
 }
@@ -123,4 +162,13 @@ void ServerTools::socketError()
     _players.clear();
     emit playersChanged();
     emit stateChanged(_state);
+}
+
+void ServerTools::updateTimeLeft()
+{
+    _timeLeft--;
+    emit timeLeftChanged();
+    if(_timeLeft == 0){
+        timer.stop();
+    }
 }

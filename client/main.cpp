@@ -4,6 +4,8 @@
 
 #include <QLocale>
 #include <QTranslator>
+#include <QMap>
+#include <QPointF>
 
 #include "servertools.h"
 
@@ -27,6 +29,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     qmlRegisterType<ServerTools>("put.geoguessr.ServerTools", 1, 0, "ServerTools");
+//    qRegisterMetaType<QMap<QString, QPointF>>("Answer");
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
