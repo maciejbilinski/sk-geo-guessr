@@ -1,16 +1,40 @@
 #include "Team.h"
-
+#include <cmath>
 Team::Team(std::string team_colour){
     this->team_colour=team_colour;
 }
 void Team::broadcast_packet(Packet &packet){
-    for(auto player:this->members){
+}
 
+void Team::removeAfk(){
+    bool was=false;
+    for(auto member:this->members){
+        was=false;
+        for(auto point:this->members_points){
+            if(member->getFD()==point.first){
+                was=true;
+                break;
+            }
+            if(!was){
+                member->onRemove(true);
+                this->remove_player(member->getFD());
+            }
+        }    
     }
 }
 
-double Team::calculate_points_distance(double target_point[2]){
-    return 0.0;
+double Team::calculate_points_distance(Point goal){
+    double x,y=0;
+    for(auto point: this->members_points){
+        x+=point.second.x;
+        y+=point.second.y;
+    }
+    x=x/(double)this->members_points.size();
+    y=y/(double)this->members_points.size();
+    x-=goal.x;
+    y-=goal.y;
+
+    return std::pow(y*y+x*x,0.5);
 }
 void Team::add_player(Client *client){
     for(auto player:this->members){

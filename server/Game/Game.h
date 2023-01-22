@@ -8,6 +8,7 @@
 #include "../Packet/Packet.h"
 #include "../Client/Client.h"
 #include "Team.h"
+#include "Point.h"
 #include <unistd.h>
 #include <mutex>
 #include <thread>
@@ -23,6 +24,7 @@ class Game{
     int round;
     Client *host;
     std::map<std::string, Team> teams;
+    Point goal=Point(0, 0);
     std::vector<int> votes; //key: target player, value numer of votes
     int getCurrentState();
 

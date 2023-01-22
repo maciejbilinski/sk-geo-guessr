@@ -1,5 +1,6 @@
 #include "Client.h"
 #include <iterator>
+#include <sstream>
 #include <sys/epoll.h>
 #include <regex>
 #include <string>
@@ -7,6 +8,7 @@
 #include "../Packet/Packet.h"
 #include "../exceptions/HandlerNotHooked.h"
 #include "../Server/Server.h"
+#include "../Game/Team.h"
 using namespace std::chrono;
 
 Client::Client(int fd, Server* server): 
@@ -20,43 +22,43 @@ Client::Client(int fd, Server* server):
         [fd,this](const Packet& packet){ // tutaj musi być cała logika odbioru pakietów i jakaś komunikacja z obiektem server
             packet.print();
             if (packet.action=="player_intro") {
-                    for(int i=0;this->server->geoguessrGame.players_queue.size()>i;i++){
-                       if(this->server->geoguessrGame.players_queue.at(i)->getFD()==fd){
-                            return;
-                       }
-                        if(this->server->geoguessrGame.players_queue.at(i)->name==packet.content){
-                            Packet packetReturn("error", "Name exists");
-                            WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                            }, [this](){
-                            }, packetReturn);
-                            addWriter(writer);
-                            this->onRemove(true);
-                            return;
-                       }
+                for(int i=0;this->server->geoguessrGame.players_queue.size()>i;i++){
+                    if(this->server->geoguessrGame.players_queue.at(i)->getFD()==fd){
+                        return;
                     }
-                    for(int i=0;this->server->geoguessrGame.players.size()>i;i++){
-                       if(this->server->geoguessrGame.players.at(i)->getFD()==fd){
-                            return;
-                       }
-                       if(this->server->geoguessrGame.players.at(i)->name==packet.content){
-                            Packet packetReturn("error", "Name exists");
-                            WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                            }, [this](){
-                            }, packetReturn);
-                            addWriter(writer);
-                            this->onRemove(true);
-                            return;
-                       }
+                    if(this->server->geoguessrGame.players_queue.at(i)->name==packet.content){
+                        Packet packetReturn("error", "Name exists");
+                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                                }, [this](){
+                                }, packetReturn);
+                        addWriter(writer);
+                        this->onRemove(true);
+                        return;
                     }
-                    Packet packetReturn("player_intro", packet.content);
-                    this->setName(packet.content);
-                    this->server->geoguessrGame.players_queue.push_back(this);
-                    WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                }
+                for(int i=0;this->server->geoguessrGame.players.size()>i;i++){
+                    if(this->server->geoguessrGame.players.at(i)->getFD()==fd){
+                        return;
+                    }
+                    if(this->server->geoguessrGame.players.at(i)->name==packet.content){
+                        Packet packetReturn("error", "Name exists");
+                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                                }, [this](){
+                                }, packetReturn);
+                        addWriter(writer);
+                        this->onRemove(true);
+                        return;
+                    }
+                }
+                Packet packetReturn("player_intro", packet.content);
+                this->setName(packet.content);
+                this->server->geoguessrGame.players_queue.push_back(this);
+                WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
                         std::cout << "Error" << std::endl;
-                    }, [this](){
+                        }, [this](){
                         std::cout << "Done npt" << std::endl;
-                    }, packetReturn);
-                    addWriter(writer);
+                        }, packetReturn);
+                addWriter(writer);
             }else if (packet.action=="vote") {
 
                 for(auto i=this->server->geoguessrGame.players.begin();i<this->server->geoguessrGame.players.end();++i){
@@ -64,40 +66,40 @@ Client::Client(int fd, Server* server):
                         this->server->geoguessrGame.votes.push_back((*i)->getFD());
                         Packet packetReturn("player_vote", "ok");
                         WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                        }, [this](){
-                        }, packetReturn);
+                                }, [this](){
+                                }, packetReturn);
                         addWriter(writer);
                         return;
                     }    
                 }
-                        Packet packetReturn("player_vote", "not exists");
-                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                Packet packetReturn("player_vote", "not exists");
+                WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
                         }, [this](){
                         }, packetReturn);
-                        addWriter(writer);
+                addWriter(writer);
             }else if (packet.action=="team") {
-                    std::string result_content="ok";
-                    if(packet.content=="Green") {
-                        this->server->geoguessrGame.teams.at("Green").add_player(this);
-                        this->team_affilation="Green";
-                    }else if (packet.content=="Pink") {
-                        this->server->geoguessrGame.teams.at("Pink").add_player(this);
-                        this->team_affilation="Pink";
-                    }else if (packet.content=="Yellow") {
-                        this->server->geoguessrGame.teams.at("Yellow").add_player(this);
-                        this->team_affilation="Yellow";
-                    }else if (packet.content=="Orange") {
-                        this->server->geoguessrGame.teams.at("Orange").add_player(this);
-                        this->team_affilation="Orange";
-                    }else{
-                        result_content="error";
-                    }
-                    Packet packetReturn("player_vote", result_content);
-                    WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                    }, [this](){
-                    }, packetReturn);
-                    addWriter(writer);
-                    return;
+                std::string result_content="ok";
+                if(packet.content=="Green") {
+                    this->server->geoguessrGame.teams.at("Green").add_player(this);
+                    this->team_affilation="Green";
+                }else if (packet.content=="Pink") {
+                    this->server->geoguessrGame.teams.at("Pink").add_player(this);
+                    this->team_affilation="Pink";
+                }else if (packet.content=="Yellow") {
+                    this->server->geoguessrGame.teams.at("Yellow").add_player(this);
+                    this->team_affilation="Yellow";
+                }else if (packet.content=="Orange") {
+                    this->server->geoguessrGame.teams.at("Orange").add_player(this);
+                    this->team_affilation="Orange";
+                }else{
+                    result_content="error";
+                }
+                Packet packetReturn("player_vote", result_content);
+                WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                        }, [this](){
+                        }, packetReturn);
+                addWriter(writer);
+                return;
             }else if(packet.action == "host_place" && fd == this->server->geoguessrGame.host->fd){
                 std::string result_content="ok";
 
@@ -112,28 +114,52 @@ Client::Client(int fd, Server* server):
                     if(tokens.size() != 3){
                         result_content="error";
                     }else{
+                        this->server->geoguessrGame.goal=Point(std::stod( tokens[2]),std::stod(tokens[1]));
                         this->server->geoguessrGame.round++;
                         auto ms = duration_cast< milliseconds >(
-                            system_clock::now().time_since_epoch()
-                        ).count() + 120000; // TODO: CONFIG
+                                system_clock::now().time_since_epoch()
+                                ).count() + 120000; // TODO: CONFIG
                         Packet packet("place",  std::to_string(this->server->geoguessrGame.round) + " " + tokens[0] + " " + std::to_string(ms));
                         for(int i=0;this->server->geoguessrGame.players.size()>i;i++){
                             if(this->server->geoguessrGame.players.at(i)->getFD()!=fd){ // skip host
                                 WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                                }, [this](){
-                                }, packet);
+                                        }, [this](){
+                                        }, packet);
                                 this->server->geoguessrGame.players.at(i)->addWriter(writer);
-                         }
+                            }
                         }
                     }
                 }else result_content="not_now";
 
                 Packet packetReturn("host_place", result_content);
                 WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                }, [this](){
-                }, packetReturn);
+                        }, [this](){
+                        }, packetReturn);
                 addWriter(writer);
                 return;
+            }else if(this->server->geoguessrGame.getCurrentState()==3 && packet.action == "set_place"){
+                std::string temp=packet.content;
+                std::replace(temp.begin(), temp.end(), ',', ' ');
+
+                std::stringstream ss(packet.content);
+                double temp2;
+                ss>>temp2;
+                double x = temp2;  
+                ss>>temp2;
+                double y=temp2;
+                std::cout<<x<<" "<<y<<std::endl;
+                this->server->geoguessrGame.teams.at(this->team_affilation).members_points.insert_or_assign(fd,Point(x,y));
+    
+                Packet packetReturn("user_set_place",  std::to_string(x)+","+std::to_string(y));
+                for(int i=0;this->server->geoguessrGame.teams.at(this->team_affilation).members.size()>i;i++){
+                    if(this->server->geoguessrGame.teams.at(this->team_affilation).members.at(i)->getFD()!=fd){ // skip host
+                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                                }, [this](){
+                                }, packetReturn);
+                        this->server->geoguessrGame.teams.at(this->team_affilation).members.at(i)->addWriter(writer);
+                    }
+                }
+
 
             }else{
                 std::cout << "Invalid data: '" << std::regex_replace(packet.toString(), std::regex("\n"), "\\n") << '\'' << std::endl;
@@ -179,15 +205,15 @@ void Client::handleEvent(unsigned int events){
 }
 
 void Client::onRemove(bool send){
-    
+
     if(send){
         Packet packet( "error", "disconnected");
         WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-            std::cout << "Error during disconnecting client" << std::endl;
-            this->server->onClientRemove(this);
-        }, [this](){
-            this->server->onClientRemove(this);
-        }, packet);
+                std::cout << "Error during disconnecting client" << std::endl;
+                this->server->onClientRemove(this);
+                }, [this](){
+                this->server->onClientRemove(this);
+                }, packet);
         addWriter(writer);
     }else{
         this->server->onClientRemove(this);
@@ -203,8 +229,8 @@ void Client::waitForWrite(bool epollout) {
 void Client::addWriter(WriteBuffer* writer){
     if(writers.size() == 0){
         if(!writer->write()){
-           this->writers.push_back(writer);
-           waitForWrite(true);
+            this->writers.push_back(writer);
+            waitForWrite(true);
         }
     }else{
         writers.push_back(writer);

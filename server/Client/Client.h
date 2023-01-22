@@ -20,8 +20,8 @@ class Client : public Handler{
         ReadBuffer readBuffer;
         std::list<WriteBuffer*> writers;
 
-        void onRemove(bool send);
     public:
+        void onRemove(bool send);
         void addWriter(WriteBuffer* writer);
         void setName(std::string);
         std::string getName();
