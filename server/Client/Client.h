@@ -12,14 +12,20 @@ class Client : public Handler{
     private:
         void waitForWrite(bool epollout);
     protected:
-        std::optional<std::string> name;
+        std::string name;
+        std::string team_affilation;
+        double coords[2];
+
         Server* server;
         ReadBuffer readBuffer;
         std::list<WriteBuffer*> writers;
 
-        void addWriter(WriteBuffer* writer);
         void onRemove(bool send);
     public:
+        void addWriter(WriteBuffer* writer);
+        void setName(std::string);
+        std::string getName();
+        std::string getTeamName();
         Client(int fd, Server* server);
 
         virtual void hookEpoll(int epollFd);
