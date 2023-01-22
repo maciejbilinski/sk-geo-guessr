@@ -21,6 +21,11 @@ void Team::add_player(Client *client){
     this->members.push_back(client);
 }
 void Team::remove_player(int client_fd){
-
+    for(auto j=this->members.begin();j<this->members.end();j++){
+        if((*j)->getFD()==client_fd){
+            this->members.erase(j); 
+            return;
+        }
+    }
 }
 

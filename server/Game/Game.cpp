@@ -1,6 +1,8 @@
 #include "Game.h"
 #include <cstdio>
+#include <map>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 #include <sys/mman.h>
 
@@ -8,7 +10,7 @@ void Game::gameLoop(){
     
     while (true) {
         sleep(1);
-        printf("Players in teams: %d \nTime remain: %d \nGame state: %d \nNumber of players in queue: %lu \nNumber of players in game: %lu \n\n",this->teams.at("Green").members.size(), this->time_counter,this->currentState, this->players_queue.size(), this->players.size());
+        printf("Players in green: %d \nTime remain: %d \nGame state: %d \nNumber of players in queue: %lu \nNumber of players in game: %lu \n\n",this->teams.at("Green").members.size(), this->time_counter,this->currentState, this->players_queue.size(), this->players.size());
         
         if(this->currentState>1 && this->players.size()<1){
             this->currentState=0;
@@ -17,7 +19,7 @@ void Game::gameLoop(){
         switch (this->currentState) {
             case 0:
                 if (this->players_queue.size()>0) {
-                    (this->time_counter)=60; //TODO: set from config
+                    (this->time_counter)=15; //TODO: set from config
                     (this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait 
                 }
             break;
@@ -37,7 +39,7 @@ void Game::gameLoop(){
                     this->players_queue.erase(i);
                     
                 }
-                this->time_counter+=15; //TODO: czas
+                //this->time_counter+=15; //TODO: czas
             }
             break;
             case 2:
@@ -49,10 +51,58 @@ void Game::gameLoop(){
             if (this->time_counter>0){
                 (this->time_counter)--;
             }else{
+                int max=0;
+                int best=0;
+                std::map<int, int> temp =  std::map<int, int>();
                 switch (this->currentState) {
                     case 1:
                         (this->time_counter)=60; //TODO: set from config
                         (this->currentState)=2; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait
+                        for(auto vote :this->votes){
+                            if (temp.find(vote)==temp.end()){
+                                temp.insert(std::pair<int,int>(vote,1));
+                            }else{
+                                temp[vote]=temp[vote]+1;
+                            }
+                        }
+                        
+                        for(auto player:temp){
+                            if(player.second>max){
+                                best=player.first;
+                            }
+                        }
+                        if(best==0){
+
+                            (this->time_counter)=60; //TODO: set from config
+                            (this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait
+                        }else{
+                            for(auto player :this->players){
+                                if(player->getFD()==best){
+                                    this->host=player;
+                                    this->teams.at(player->getTeamName()).remove_player(player->getFD());
+                            
+                                    Packet packet("host",player->getName());
+                                    for(auto j=this->players.begin();j<this->players.end();j++){
+                                            WriteBuffer* writer = new WriteBuffer((*j)->getFD(), [this](const Buffer& buffer){
+                                                    }, [this](){
+                                            }, packet);
+                                            (*j)->addWriter(writer);
+                                    }
+                                }
+                            }
+                            if(this->host==nullptr){
+                                (this->time_counter)=60; //TODO: set from config
+                                (this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait
+                                for(auto j=this->players.begin();j<this->players.end();j++){
+                                    Packet packet("voting_failed","" );
+                                    WriteBuffer* writer = new WriteBuffer((*j)->getFD(), [this](const Buffer& buffer){
+                                            }, [this](){
+                                    }, packet);
+                                    (*j)->addWriter(writer);
+                                }
+                            
+                        }
+                        }
                     break;
                     case 2:
                         (this->time_counter)=60; //TODO: set from config

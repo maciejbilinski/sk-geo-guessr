@@ -25,6 +25,7 @@ class Client : public Handler{
         void addWriter(WriteBuffer* writer);
         void setName(std::string);
         std::string getName();
+        std::string getTeamName();
         Client(int fd, Server* server);
 
         virtual void hookEpoll(int epollFd);

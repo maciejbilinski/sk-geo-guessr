@@ -76,16 +76,20 @@ Client::Client(int fd, Server* server):
                     std::string result_content="ok";
                     if(packet.content=="Green") {
                         this->server->geoguessrGame.teams.at("Green").add_player(this);
+                        this->team_affilation="Green";
                     }else if (packet.content=="Pink") {
                         this->server->geoguessrGame.teams.at("Pink").add_player(this);
+                        this->team_affilation="Pink";
                     }else if (packet.content=="Yellow") {
                         this->server->geoguessrGame.teams.at("Yellow").add_player(this);
+                        this->team_affilation="Yellow";
                     }else if (packet.content=="Orange") {
                         this->server->geoguessrGame.teams.at("Orange").add_player(this);
+                        this->team_affilation="Orange";
                     }else{
                         result_content="error";
                     }
-                        Packet packetReturn("player_vote", result_content);
+                        Packet packetReturn("player_team", result_content);
                         WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
                         }, [this](){
                         }, packetReturn);
@@ -172,4 +176,7 @@ void Client::setName(std::string name){
 }
 std::string Client::getName(){
     return this->name;
+}
+std::string Client::getTeamName(){
+    return this->team_affilation;
 }
