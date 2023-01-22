@@ -48,15 +48,8 @@ Client::Client(int fd, Server* server):
                             return;
                        }
                     }
-                    Packet packetReturn("player_intro", "ok");
                     this->setName(packet.content);
-                    this->server->geoguessrGame.players_queue.push_back(this);
-                    WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                        std::cout << "Error" << std::endl;
-                    }, [this](){
-                        std::cout << "Done npt" << std::endl;
-                    }, packetReturn);
-                    addWriter(writer);
+                    this->server->geoguessrGame.addPlayer(this);
             }else if (packet.action=="vote") {
 
                 for(auto i=this->server->geoguessrGame.players.begin();i<this->server->geoguessrGame.players.end();++i){

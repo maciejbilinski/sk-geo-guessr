@@ -26,29 +26,13 @@ void Game::gameLoop(){
                 }
             break;
             case 1:
-            if(this->players_queue.size()>0){
-                for(auto i=this->players_queue.begin();i<this->players_queue.end();i++){
-                    if(this->players.size()>0){
-                        for(auto j=this->players.begin();j<this->players.end();j++){
-                            Packet packet("new_player", (*i)->getName());
-                            WriteBuffer* writer = new WriteBuffer((*j)->getFD(), [this](const Buffer& buffer){
-                                    }, [this](){
-                            }, packet);
-                            (*j)->addWriter(writer);
-
-                            Packet packet2("new_player", (*j)->getName());
-                            WriteBuffer* writer2 = new WriteBuffer((*i)->getFD(), [this](const Buffer& buffer){
-                                    }, [this](){
-                            }, packet2);
-                            (*i)->addWriter(writer2);
-                        }
+                if(this->players_queue.size()>0){
+                    for(auto i=this->players_queue.begin();i<this->players_queue.end();i++){
+                        addPlayer(*i);
+                        this->players_queue.erase(i);
                     }
-                    this->players.push_back(*i);
-                    this->players_queue.erase(i);
-                    
+                    //this->time_counter+=15; //TODO: czas
                 }
-                //this->time_counter+=15; //TODO: czas
-            }
             break;
             case 2:
             case 3:
@@ -131,9 +115,7 @@ void Game::gameLoop(){
                 }
             }
             this->mutex.unlock();
-
-
-}
+    }
 }
 
 Game::Game(){
@@ -201,4 +183,47 @@ void Game::newPlace(){
 
 int Game::getCurrentState(){
     return currentState;
+}
+
+void Game::addPlayer(Client* i){
+    this->mutex.lock();
+    if (this->currentState == 0) {
+        (this->time_counter)=60; //TODO: set from config
+        (this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait 
+    }else if(this->currentState != 1){
+        Packet packetReturn("player_intro", "game_started");
+        WriteBuffer* writer = new WriteBuffer(i->getFD(), [](const Buffer& buffer){
+            std::cout << "Error" << std::endl;
+        }, [](){
+            std::cout << "Sent game_started" << std::endl;
+        }, packetReturn);
+        i->addWriter(writer);
+
+        this->players_queue.push_back(i);
+        this->mutex.unlock();
+        return;
+    }
+
+    Packet packetReturn("player_intro", "ok");
+    WriteBuffer* writer = new WriteBuffer(i->getFD(), [](const Buffer& buffer){
+        std::cout << "Error" << std::endl;
+    }, [](){
+        std::cout << "Sent player_intro ok" << std::endl;
+    }, packetReturn);
+    i->addWriter(writer);
+    if(this->players.size()>0){
+        for(auto j=this->players.begin();j<this->players.end();j++){
+            Packet packet("new_player", i->getName());
+            WriteBuffer* writer = new WriteBuffer((*j)->getFD(), [this](const Buffer& buffer){}, [this](){}, packet);
+            (*j)->addWriter(writer);
+
+            Packet packet2("new_player", (*j)->getName());
+            WriteBuffer* writer2 = new WriteBuffer(i->getFD(), [](const Buffer& buffer){}, [](){}, packet2);
+            i->addWriter(writer2);
+        }
+    }
+    this->players.push_back(i);
+    this->mutex.unlock();
+
+
 }

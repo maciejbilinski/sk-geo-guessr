@@ -94,6 +94,9 @@ void ServerTools::readyRead()
             _players.append(name);
             emit playersChanged();
             emit stateChanged(_state);
+        }else if(data.contains("action:player_intro;content:game_started")){
+            _state = CLIENT_STATE::GAME_STARTED;
+            emit stateChanged(_state);
         }else if(data == "vote_accepted"){
             _state = CLIENT_STATE::WAIT_FOR_GAME;
             emit stateChanged(_state);
