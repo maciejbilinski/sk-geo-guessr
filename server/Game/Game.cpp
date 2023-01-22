@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include <sys/mman.h>
+#include <thread>
 
 void Game::gameLoop(){
     
@@ -19,8 +20,9 @@ void Game::gameLoop(){
         switch (this->currentState) {
             case 0:
                 if (this->players_queue.size()>0) {
-                    (this->time_counter)=15; //TODO: set from config
-                    (this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait 
+                    (this->time_counter)=60; //TODO: set from config
+                    //(this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait 
+                    (this->currentState) = 2; // wchodzimy w stan admin panel dla testu; TODO: zmienić to
                 }
             break;
             case 1:
@@ -181,5 +183,16 @@ void Game::removePlayer(int fd){
            this->players.erase(i);
            return;
         }
+    }
 }
+
+void Game::newPlace(){
+    this->mutex.lock();
+    (this->currentState) = 3;
+    (this->time_counter)=60;
+    this->mutex.unlock();
+}
+
+int Game::getCurrentState(){
+    return currentState;
 }

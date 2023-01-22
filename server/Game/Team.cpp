@@ -10,7 +10,7 @@ void Team::broadcast_packet(Packet &packet){
 }
 
 double Team::calculate_points_distance(double target_point[2]){
-
+    return 0.0;
 }
 void Team::add_player(Client *client){
     for(auto player:this->members){

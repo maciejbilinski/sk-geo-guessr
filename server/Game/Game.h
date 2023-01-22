@@ -17,19 +17,21 @@ class Game{
 
     std::mutex mutex;
     int currentState; //enum: GameState.h
-    int round;
-    Client *host;
     void gameLoop();
 
     public:
+    int round;
+    Client *host;
     std::map<std::string, Team> teams;
     std::vector<int> votes; //key: target player, value numer of votes
+    int getCurrentState();
 
     std::vector<Client*> players;
     std::vector<Client*> players_queue;
     int time_counter;
     void handlePacket(Packet &packet);
     void removePlayer(int fd); //remove from team list and game list
+    void newPlace();
     Game();
     void setup();
 };

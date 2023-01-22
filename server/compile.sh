@@ -1,1 +1,1 @@
-g++ -std=c++17 enums/GameState/GameStateUtils.cpp Buffer/Buffer.cpp Buffer/ReadBuffer.cpp Buffer/WriteBuffer.cpp Handler/Handler.cpp Packet/Packet.cpp Client/Client.cpp Game/Team.cpp Game/Game.cpp Server/Server.cpp main.cpp
+g++ -std=c++17 -pthread enums/GameState/GameStateUtils.cpp Buffer/Buffer.cpp Buffer/ReadBuffer.cpp Buffer/WriteBuffer.cpp Handler/Handler.cpp Packet/Packet.cpp Client/Client.cpp Game/Team.cpp Game/Game.cpp Server/Server.cpp main.cpp
