@@ -51,12 +51,12 @@ void ServerTools::vote(QString player, QString team)
 
 void ServerTools::sendPhoto(QString photo, double latitude, double longitude)
 {
-    _socket.write(("Round: " + photo + ";Coords: " + QString::number(latitude) + ";" + QString::number(longitude) + "\n").toLocal8Bit());
+    _socket.write(("action:host_place;content:" + photo + " " + QString::number(latitude) + " " + QString::number(longitude) + ";\n").toLocal8Bit());
 }
 
 void ServerTools::sendAnswer(double latitude, double longitude)
 {
-    _socket.write(("Answer: " + QString::number(_round) + ";Coords: " + QString::number(latitude) + ";" + QString::number(longitude) + "\n").toLocal8Bit());
+    _socket.write(("action:set_place;" + QString::number(latitude) + "," + QString::number(longitude) + ";\n").toLocal8Bit());
 }
 
 void ServerTools::connected()
@@ -97,63 +97,51 @@ void ServerTools::readyRead()
         }else if(data.contains("action:player_intro;content:game_started")){
             _state = CLIENT_STATE::GAME_STARTED;
             emit stateChanged(_state);
-        }else if(data == "vote_accepted"){
-            _state = CLIENT_STATE::WAIT_FOR_GAME;
-            emit stateChanged(_state);
         }else if(data.contains("action:new_player;content:")){ // po polaczeniu serwer powinien do nowego gracza wyslac kilka takich komunikatow
             QString playerName = data.mid(26);
             _players.append(playerName);
             emit playersChanged();
-        }else if(data.contains("del player: ")){
-            QString playerName = data.mid(12);
+        }else if(data.contains("action:player_disconnected;content:")){
+            QString playerName = data.mid(35);
             _players.removeAll(playerName);
             emit playersChanged();
-        }else if(data == "ok vote"){
+        }else if(data == "action:player_vote;content:ok"){
             _state = CLIENT_STATE::WAIT_FOR_RANKING;
             emit stateChanged(_state);
-        }else if(data.contains("ranking: ")){
-            QString rank = data.mid(9);
-            QStringList ranks = rank.split( ";" );
+        }else if(data.contains("action:ranking;content:")){
+            QString rank = data.mid(23);
+            QStringList ranks = rank.split( " " );
             _ranking.clear();
-            for(int j=0; j<ranks.size(); j++){
+            for(int j=0; j<ranks.size()-1; j++){
                 QString r = ranks.at(j);
                 _ranking.append(r);
             }
             emit rankingChanged();
-        }else if(data.contains("game start: ")){
+        }else if(data.contains("action:host;content:")){
             _round = 1;
             emit roundChanged();
-            QString role = data.mid(12);
-            if(role == "host"){
+            QString user = data.mid(20);
+            if(user == name){
                 _state = CLIENT_STATE::ADMIN_PANEL;
                 emit stateChanged(_state);
-            }else if(role.contains("game;")){
-                QStringList subdata = role.mid(5).split(";");
-                _photoURL = subdata[0];
-                _timeLeft = (subdata[1].toLongLong()-QDateTime::currentMSecsSinceEpoch())/1000;
-                timer.stop();
-                timer.start();
-                _state = CLIENT_STATE::GAME;
-                emit timeLeftChanged();
-                emit photoURLChanged();
-                emit stateChanged(_state);
             }
-        }else if(data.contains("new round: ")){
-            QString round = data.mid(11);
-            QStringList roundData = round.split(";");
-            _round = roundData[0].toInt();
+        }else if(data.contains("action:place;content:")){
+            QStringList subdata = data.mid(21).split(" ");
+            _round = subdata[0].toInt();
             _answers.clear();
-            _photoURL = roundData[1];
-            _timeLeft = (roundData[2].toLongLong()-QDateTime::currentMSecsSinceEpoch())/1000;
+            _photoURL = subdata[1];
+            _timeLeft = (subdata[2].toLongLong()-QDateTime::currentMSecsSinceEpoch())/1000;
             timer.stop();
             timer.start();
+            _state = CLIENT_STATE::GAME;
             emit timeLeftChanged();
             emit photoURLChanged();
+            emit stateChanged(_state);
             emit answersChanged();
             emit roundChanged();
-        }else if(data.contains("new answer: ")){
-            QString answer = data.mid(12);
-            QStringList answerData = answer.split(";");
+        }else if(data.contains("action:user_set_place;content:")){
+            QString answer = data.mid(30);
+            QStringList answerData = answer.split(",");
             _answers[answerData[0]] = QPointF(answerData[1].toDouble(), answerData[2].toDouble());
             emit answersChanged();
         }else if(data.contains("action:error;content:")){

@@ -28,13 +28,13 @@ void Game::gameLoop(){
         sleep(1);
         allMutex.lock();
 
-        printf("Players in green: %d \nTime remain: %d \nGame state: %d \nNumber of players in queue: %lu \nNumber of players in game: %lu \n\n",
-            this->teams.at("Green").members.size(), 
-            this->time_counter,
-            this->currentState, 
-            this->players_queue.size(), 
-            this->players.size()
-        );
+        // printf("Players in green: %d \nTime remain: %d \nGame state: %d \nNumber of players in queue: %lu \nNumber of players in game: %lu \n\n",
+        //     this->teams.at("Green").members.size(), 
+        //     this->time_counter,
+        //     this->currentState, 
+        //     this->players_queue.size(), 
+        //     this->players.size()
+        // );
 
         if(this->currentState>1 && this->players.size()<1){
             this->currentState=0;
@@ -70,7 +70,7 @@ void Game::gameLoop(){
             std::map<std::string,double> rank=std::map<std::string,double>();
             switch (this->currentState) {
                 case 1:
-                    (this->time_counter)=60; //TODO: set from config
+                    (this->time_counter)=10; //TODO: set from config
                     (this->currentState)=2; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait
                     for(auto vote :this->votes){
                         if (temp.find(vote)==temp.end()){
@@ -136,15 +136,15 @@ void Game::gameLoop(){
                     }
                     sort_map(rank);                                 
                     best=0;
-                    for(auto& team:rank){
-                        best++;
-                        for(auto j=this->players.begin();j<this->players.end();j++){
-                            Packet packet("ranking_"+std::to_string(best),team.first);
-                            WriteBuffer* writer = new WriteBuffer((*j)->getFD(), [this](const Buffer& buffer){
-                                    }, [this](){
-                                    }, packet);
-                            (*j)->addWriter(writer);
+                    for(auto j=this->players.begin();j<this->players.end();j++){
+                        std::string ranking = "";
+                        for(auto& team:rank){
+                            best++;
+                            ranking += team.first + " ";
                         }
+                        Packet packet("ranking",ranking);
+                        WriteBuffer* writer = new WriteBuffer((*j)->getFD(), [](const Buffer& buffer){}, [](){}, packet);
+                        (*j)->addWriter(writer);
                     }
                     
                     for(auto team:this->teams)
@@ -385,7 +385,7 @@ void Game::startNewRound(Client* player, const Packet& packet){
                 content.erase(0, pos + 1);
             }
             if(tokens.size() != 3){
-                result_content="error";
+                result_content="error1";
             }else{
                 this->round++;
                 this->goal=Point(std::stod( tokens[2]),std::stod(tokens[1]));
@@ -402,7 +402,7 @@ void Game::startNewRound(Client* player, const Packet& packet){
             }
         }else result_content="not_now";
     }else{
-        result_content = "error";
+        result_content = "error2";
     }
 
     Packet packetReturn("host_place", result_content);

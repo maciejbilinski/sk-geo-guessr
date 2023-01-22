@@ -26,16 +26,16 @@ Client::Client(int fd, Server* server):
                 this->server->geoguessrGame.vote(this, packet);
                 return;
             }else if (packet.action=="team") {
-                    std::string result_content="ok";
-                    if(this->server->geoguessrGame.addToTeam(this, packet.content)){
-                        this->team_affilation = packet.content;
-                    }else{
-                        result_content="error";
-                    }
-                    Packet packetReturn("player_vote", result_content);
-                    WriteBuffer* writer = new WriteBuffer(fd, [](const Buffer& buffer){}, [](){}, packetReturn);
-                    addWriter(writer);
-                    return;
+                std::string result_content="ok";
+                if(this->server->geoguessrGame.addToTeam(this, packet.content)){
+                    this->team_affilation = packet.content;
+                }else{
+                    result_content="error";
+                }
+                Packet packetReturn("player_vote", result_content);
+                WriteBuffer* writer = new WriteBuffer(fd, [](const Buffer& buffer){}, [](){}, packetReturn);
+                addWriter(writer);
+                return;
             }else if(packet.action == "host_place"){
                 this->server->geoguessrGame.startNewRound(this, packet);
                 return;
