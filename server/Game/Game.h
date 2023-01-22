@@ -36,6 +36,7 @@ class Game{
     void newPlace();
     Game();
     void setup();
+    void addPlayer(Client* player);
 };
 #endif
 

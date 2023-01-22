@@ -70,16 +70,24 @@ Window {
             game.visible = false;
             admin_panel.visible = false;
             introError.visible = false;
+            introNameError.visible = false;
             waiting_for_game.visible = false;
 
             if(state <= 0){
-                introduction.visible = true;
                 if(state === ServerTools.ERROR){
+                    introduction.visible = true;
                     introError.visible = true;
+                }else if(state === ServerTools.NAME_EXISTS){
+                    introduction.visible = true;
+                    introNameError.visible = true;
+                }else if(state === ServerTools.GAME_STARTED){
+                    loader.visible = true;
+                    waiting_for_game.visible = true;
+                }else{
+                    introduction.visible = true;
                 }
             }else if(state === ServerTools.WAIT_FOR_GAME){
                 loader.visible = true;
-                waiting_for_game.visible = true;
             }else if(state === ServerTools.VOTING){
                 choose_team_and_host.visible = true;
             }else if(state === ServerTools.WAIT_FOR_RANKING){
@@ -115,6 +123,7 @@ Window {
                 choose_team_and_host.visible = false;
                 waiting_for_game_ranking.visible = false;
                 game.visible = true;
+                introNameError.visible = false;
                 admin_panel.visible = false;
                 introError.visible = false;
                 waiting_for_game.visible = false;
@@ -229,7 +238,15 @@ Window {
                 Layout.alignment: Qt.AlignCenter
                 Layout.preferredWidth: controlWidth
                 id: introError
-                text: qsTr("Błąd serwera. Spróbuj ponownie.")
+                text: qsTr("Server erorr. Try again.")
+                color: "#e53935"
+                visible: false
+            }
+            Text {
+                Layout.alignment: Qt.AlignCenter
+                Layout.preferredWidth: controlWidth
+                id: introNameError
+                text: qsTr("This name is already taken.")
                 color: "#e53935"
                 visible: false
             }

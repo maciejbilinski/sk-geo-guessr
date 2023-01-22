@@ -25,41 +25,53 @@ Client::Client(int fd, Server* server):
                 for(int i=0;this->server->geoguessrGame.players_queue.size()>i;i++){
                     if(this->server->geoguessrGame.players_queue.at(i)->getFD()==fd){
                         return;
+                        for(int i=0;this->server->geoguessrGame.players_queue.size()>i;i++){
+                            if(this->server->geoguessrGame.players_queue.at(i)->getFD()==fd){
+                                return;
+                            }
+                            if(this->server->geoguessrGame.players_queue.at(i)->name==packet.content){
+                                Packet packetReturn("error", "name_exists");
+                                WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                                        }, [this](){
+                                        }, packetReturn);
+                                addWriter(writer);
+                                this->onRemove(true);
+                                return;
+                            }
+                        }
+                        for(int i=0;this->server->geoguessrGame.players.size()>i;i++){
+                            if(this->server->geoguessrGame.players.at(i)->getFD()==fd){
+                                return;
+                            }
+                            if(this->server->geoguessrGame.players.at(i)->name==packet.content){
+                                Packet packetReturn("error", "name_exists");
+                                WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                                        }, [this](){
+                                        }, packetReturn);
+                                addWriter(writer);
+                                this->onRemove(true);
+                                return;
+                            }
+                        }
                     }
-                    if(this->server->geoguessrGame.players_queue.at(i)->name==packet.content){
-                        Packet packetReturn("error", "Name exists");
-                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                                }, [this](){
-                                }, packetReturn);
-                        addWriter(writer);
-                        this->onRemove(true);
-                        return;
+                    for(int i=0;this->server->geoguessrGame.players.size()>i;i++){
+                        if(this->server->geoguessrGame.players.at(i)->getFD()==fd){
+                            return;
+                        }
+                        if(this->server->geoguessrGame.players.at(i)->name==packet.content){
+                            Packet packetReturn("error", "Name exists");
+                            WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                                    }, [this](){
+                                    }, packetReturn);
+                            addWriter(writer);
+                            this->onRemove(true);
+                            return;
+                        }
                     }
+                    this->setName(packet.content);
+                    this->server->geoguessrGame.addPlayer(this);
                 }
-                for(int i=0;this->server->geoguessrGame.players.size()>i;i++){
-                    if(this->server->geoguessrGame.players.at(i)->getFD()==fd){
-                        return;
-                    }
-                    if(this->server->geoguessrGame.players.at(i)->name==packet.content){
-                        Packet packetReturn("error", "Name exists");
-                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                                }, [this](){
-                                }, packetReturn);
-                        addWriter(writer);
-                        this->onRemove(true);
-                        return;
-                    }
-                }
-                Packet packetReturn("player_intro", packet.content);
-                this->setName(packet.content);
-                this->server->geoguessrGame.players_queue.push_back(this);
-                WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                        std::cout << "Error" << std::endl;
-                        }, [this](){
-                        std::cout << "Done npt" << std::endl;
-                        }, packetReturn);
-                addWriter(writer);
-            }else if (packet.action=="vote") {
+            } else if (packet.action=="vote") {
 
                 for(auto i=this->server->geoguessrGame.players.begin();i<this->server->geoguessrGame.players.end();++i){
                     if((*i)->getName()==packet.content){
@@ -149,7 +161,7 @@ Client::Client(int fd, Server* server):
                 double y=temp2;
                 std::cout<<x<<" "<<y<<std::endl;
                 this->server->geoguessrGame.teams.at(this->team_affilation).members_points.insert_or_assign(fd,Point(x,y));
-    
+
                 Packet packetReturn("user_set_place",  std::to_string(x)+","+std::to_string(y));
                 for(int i=0;this->server->geoguessrGame.teams.at(this->team_affilation).members.size()>i;i++){
                     if(this->server->geoguessrGame.teams.at(this->team_affilation).members.at(i)->getFD()!=fd){ // skip host
