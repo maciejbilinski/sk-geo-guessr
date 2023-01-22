@@ -1,10 +1,13 @@
 #include "Client.h"
 #include <iterator>
+#include <sstream>
 #include <sys/epoll.h>
 #include <regex>
 #include "../Packet/Packet.h"
 #include "../exceptions/HandlerNotHooked.h"
 #include "../Server/Server.h"
+#include "../Game/Team.h"
+using namespace std::chrono;
 
 Client::Client(int fd, Server* server): 
     server{server}, 
@@ -35,7 +38,30 @@ Client::Client(int fd, Server* server):
                     return;
             }else if(packet.action == "host_place"){
                 this->server->geoguessrGame.startNewRound(this, packet);
+                //                        this->server->geoguessrGame.goal=Point(std::stod( tokens[2]),std::stod(tokens[1]));
                 return;
+            }else if(this->server->geoguessrGame.getCurrentState()==3 && packet.action == "set_place"){
+                std::string temp=packet.content;
+                std::replace(temp.begin(), temp.end(), ',', ' ');
+
+                std::stringstream ss(packet.content);
+                double temp2;
+                ss>>temp2;
+                double x = temp2;  
+                ss>>temp2;
+                double y=temp2;
+                std::cout<<x<<" "<<y<<std::endl;
+                this->server->geoguessrGame.teams.at(this->team_affilation).members_points.insert_or_assign(fd,Point(x,y));
+
+                Packet packetReturn("user_set_place",  std::to_string(x)+","+std::to_string(y));
+                for(int i=0;this->server->geoguessrGame.teams.at(this->team_affilation).members.size()>i;i++){
+                    if(this->server->geoguessrGame.teams.at(this->team_affilation).members.at(i)->getFD()!=fd){ // skip host
+                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                                }, [this](){
+                                }, packetReturn);
+                        this->server->geoguessrGame.teams.at(this->team_affilation).members.at(i)->addWriter(writer);
+                    }
+                }
             }else{
                 std::cout << "Invalid data: '" << std::regex_replace(packet.toString(), std::regex("\n"), "\\n") << '\'' << std::endl;
                 this->onRemove(true);
@@ -80,15 +106,15 @@ void Client::handleEvent(unsigned int events){
 }
 
 void Client::onRemove(bool send){
-    
+
     if(send){
         Packet packet( "error", "disconnected");
         WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-            std::cout << "Error during disconnecting client" << std::endl;
-            this->server->onClientRemove(this);
-        }, [this](){
-            this->server->onClientRemove(this);
-        }, packet);
+                std::cout << "Error during disconnecting client" << std::endl;
+                this->server->onClientRemove(this);
+                }, [this](){
+                this->server->onClientRemove(this);
+                }, packet);
         addWriter(writer);
     }else{
         this->server->onClientRemove(this);
@@ -104,8 +130,8 @@ void Client::waitForWrite(bool epollout) {
 void Client::addWriter(WriteBuffer* writer){
     if(writers.size() == 0){
         if(!writer->write()){
-           this->writers.push_back(writer);
-           waitForWrite(true);
+            this->writers.push_back(writer);
+            waitForWrite(true);
         }
     }else{
         writers.push_back(writer);
