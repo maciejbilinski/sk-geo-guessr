@@ -70,12 +70,15 @@ Window {
             game.visible = false;
             admin_panel.visible = false;
             introError.visible = false;
+            introNameError.visible = false;
             waiting_for_game.visible = false;
 
             if(state <= 0){
                 introduction.visible = true;
                 if(state === ServerTools.ERROR){
                     introError.visible = true;
+                }else if(state === ServerTools.NAME_EXISTS){
+                    introNameError.visible = true;
                 }
             }else if(state === ServerTools.WAIT_FOR_GAME){
                 loader.visible = true;
@@ -115,6 +118,7 @@ Window {
                 choose_team_and_host.visible = false;
                 waiting_for_game_ranking.visible = false;
                 game.visible = true;
+                introNameError.visible = false;
                 admin_panel.visible = false;
                 introError.visible = false;
                 waiting_for_game.visible = false;
@@ -230,6 +234,14 @@ Window {
                 Layout.preferredWidth: controlWidth
                 id: introError
                 text: qsTr("Błąd serwera. Spróbuj ponownie.")
+                color: "#e53935"
+                visible: false
+            }
+            Text {
+                Layout.alignment: Qt.AlignCenter
+                Layout.preferredWidth: controlWidth
+                id: introNameError
+                text: qsTr("Ta nazwa jest zajęta.")
                 color: "#e53935"
                 visible: false
             }

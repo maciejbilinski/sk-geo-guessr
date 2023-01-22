@@ -43,7 +43,7 @@ Packet::Packet( std::string action, std::string content){
 
 std::string Packet::toString() const{
     std::stringstream ss;
-    ss <<  " o:" << this->action << " c:" << this->content << std::endl;
+    ss <<  "action:" << this->action << ";content:" << this->content << std::endl;
     return ss.str();
 }
 

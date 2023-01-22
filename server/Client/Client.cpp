@@ -25,7 +25,7 @@ Client::Client(int fd, Server* server):
                             return;
                        }
                         if(this->server->geoguessrGame.players_queue.at(i)->name==packet.content){
-                            Packet packetReturn("error", "Name exists");
+                            Packet packetReturn("error", "name_exists");
                             WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
                             }, [this](){
                             }, packetReturn);
@@ -39,7 +39,7 @@ Client::Client(int fd, Server* server):
                             return;
                        }
                        if(this->server->geoguessrGame.players.at(i)->name==packet.content){
-                            Packet packetReturn("error", "Name exists");
+                            Packet packetReturn("error", "name_exists");
                             WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
                             }, [this](){
                             }, packetReturn);
@@ -48,7 +48,7 @@ Client::Client(int fd, Server* server):
                             return;
                        }
                     }
-                    Packet packetReturn("player_intro", packet.content);
+                    Packet packetReturn("player_intro", "ok");
                     this->setName(packet.content);
                     this->server->geoguessrGame.players_queue.push_back(this);
                     WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){

@@ -27,7 +27,8 @@ public:
         GAME = 3,
         STATUS = 4,
         WAIT_FOR_GAME = 5, // game is already started
-        WAIT_FOR_RANKING = 6
+        WAIT_FOR_RANKING = 6,
+        NAME_EXISTS = -2
     };
     Q_ENUM(CLIENT_STATE)
 

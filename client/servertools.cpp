@@ -69,8 +69,11 @@ void ServerTools::disconnected()
 {
     qDebug() << "disconnected...";
 
-    _state = CLIENT_STATE::ERROR;
-    emit stateChanged(_state);
+    if(_state != CLIENT_STATE::NAME_EXISTS){
+        qDebug() << "error state" << _state;
+        _state = CLIENT_STATE::ERROR;
+        emit stateChanged(_state);
+    }
 }
 
 void ServerTools::bytesWritten(qint64 bytes)
@@ -94,7 +97,7 @@ void ServerTools::readyRead()
         }else if(data == "vote_accepted"){
             _state = CLIENT_STATE::WAIT_FOR_GAME;
             emit stateChanged(_state);
-        }else if(data.contains("new player: ")){ // po polaczeniu serwer powinien do nowego gracza wyslac kilka takich komunikatow
+        }else if(data.contains("new_player")){ // po polaczeniu serwer powinien do nowego gracza wyslac kilka takich komunikatow
             QString playerName = data.mid(12);
             _players.append(playerName);
             emit playersChanged();
@@ -150,6 +153,12 @@ void ServerTools::readyRead()
             QStringList answerData = answer.split(";");
             _answers[answerData[0]] = QPointF(answerData[1].toDouble(), answerData[2].toDouble());
             emit answersChanged();
+        }else if(data.contains("action:error;content:")){
+            QString content = data.mid(13+8);
+            if(content == "name_exists"){
+                _state = CLIENT_STATE::NAME_EXISTS;
+                emit stateChanged(_state);
+            }
         }
     }
 }
@@ -160,10 +169,13 @@ void ServerTools::socketError()
 
     _socket.abort();
     _socket.close();
-    _state = CLIENT_STATE::ERROR;
     _players.clear();
+    if(_state != CLIENT_STATE::NAME_EXISTS){
+        qDebug() << "error state" << _state;
+        _state = CLIENT_STATE::ERROR;
+        emit stateChanged(_state);
+    }
     emit playersChanged();
-    emit stateChanged(_state);
 }
 
 void ServerTools::updateTimeLeft()
