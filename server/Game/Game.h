@@ -13,28 +13,41 @@
 #include <thread>
 #include <set>
 class Game{    
-    
+    std::mutex allMutex;    
 
-    std::mutex mutex;
     int currentState; //enum: GameState.h
+    
+    int round;
+    
+    Client *host;
+    
+    std::map<std::string, Team> teams;
+    
+    std::vector<int> votes; //key: target player, value numer of votes
+
+    std::vector<Client*> players;
+
+    std::vector<Client*> players_queue;
+
+    int time_counter;
+
+    void _addPlayer(Client* player, bool inQueue, bool lock);
+
+    
     void gameLoop();
 
     public:
-    int round;
-    Client *host;
-    std::map<std::string, Team> teams;
-    std::vector<int> votes; //key: target player, value numer of votes
-    int getCurrentState();
-
-    std::vector<Client*> players;
-    std::vector<Client*> players_queue;
-    int time_counter;
     void handlePacket(Packet &packet);
     void removePlayer(int fd); //remove from team list and game list
     void newPlace();
     Game();
     void setup();
     void addPlayer(Client* player);
+    bool addToTeam(Client* player, std::string color);
+
+    void startNewRound(Client* player, const Packet& packet);
+    void vote(Client* player, const Packet& packet);
+    
 };
 #endif
 
