@@ -3,17 +3,18 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include "../Client/Client.h"
 class Team{
-    int team_colour;
     int score = 0;
-    std::map<int,Client*> members; //map aby było łatwiej potem wyrzucic usera
+    std::vector<Client*> members; //map aby było łatwiej potem wyrzucic usera
     
     public:
-    Team(int team_colour);
+    std::string team_colour;
+    Team(std::string team_colour);
     void broadcast_packet(Packet &packet);
     double calculate_points_distance(double target_point[2]); 
-    void add_player(int client_fd);
+    void add_player(Client* client);
     void remove_player(int client_fd);
 };
 

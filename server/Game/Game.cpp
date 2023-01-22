@@ -8,9 +8,9 @@ void Game::gameLoop(){
     
     while (true) {
         sleep(1);
-        printf("Time remain: %d Game state:%d Number of players:%lu\n", this->time_counter,this->currentState, this->players_queue.size());
+        printf("Time remain: %d \nGame state: %d \nNumber of players in queue: %lu \nNumber of players in game: %lu \n\n", this->time_counter,this->currentState, this->players_queue.size(), this->players.size());
         
-        if(this->players.size()==0){
+        if(this->currentState>1 && this->players.size()<1){
             this->currentState=0;
         }
 
@@ -24,10 +24,20 @@ void Game::gameLoop(){
             case 1:
             if(this->players_queue.size()>0){
                 for(auto i=this->players_queue.begin();i<this->players_queue.end();i++){
+                    if(this->players.size()>0){
+                        for(auto j=this->players.begin();j<this->players.end();j++){
+                            Packet packet("new_player", (*i)->getName());
+                            WriteBuffer* writer = new WriteBuffer((*j)->getFD(), [this](const Buffer& buffer){
+                                    }, [this](){
+                            }, packet);
+                            (*j)->addWriter(writer);
+                        }
+                    }
                     this->players.push_back(*i);
                     this->players_queue.erase(i);
+                    
                 }
-                    this->time_counter+=15; //TODO: czas
+                this->time_counter+=15; //TODO: czas
             }
             break;
             case 2:
@@ -72,8 +82,8 @@ Game::Game(){
     this->host=nullptr;
     this->players = std::vector<Client*>();
     this->players_queue = std::vector<Client*>();
-    this->votes = std::map<int,int>();
-    this->teams = std::map<int, Team>();
+    this->votes = std::vector<int>();
+    this->teams = std::map<std::string, Team>();
 
     this->currentState =0;  
         //(int*)mmap(NULL, sizeof (int) , PROT_READ | PROT_WRITE,
@@ -95,9 +105,10 @@ Game::Game(){
     
 }
 void Game::setup(){
-    for(int i=0;i<4;i++){
-        teams.insert({i, Team(i)}); 
-    }
+    teams.insert({"Green", Team("Green")}); 
+    teams.insert({"Yellow", Team("Yellow")}); 
+    teams.insert({"Orange", Team("Orange")}); 
+    teams.insert({"Pink", Team("Pink")}); 
     std::thread timer([this](){gameLoop();});
     timer.detach();
 

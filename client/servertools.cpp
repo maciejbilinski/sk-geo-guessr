@@ -44,7 +44,9 @@ void ServerTools::quit()
 void ServerTools::vote(QString player, QString team)
 {
     _team = team;
-    _socket.write(("My vote: " + player + ";My team: " + team + "\n").toLocal8Bit());
+    _socket.write(("action:vote ;content:" + player + ";\n").toLocal8Bit());
+    _socket.write(("action:team ;content:" + team + ";\n").toLocal8Bit());
+
 }
 
 void ServerTools::sendPhoto(QString photo, double latitude, double longitude)
@@ -60,7 +62,7 @@ void ServerTools::sendAnswer(double latitude, double longitude)
 void ServerTools::connected()
 {
     qDebug() << "connected...";
-    _socket.write(("New player: " + this->name + "\n").toLocal8Bit());
+    _socket.write(("content:"+ this->name + ";action:player_intro;\n").toLocal8Bit());
 }
 
 void ServerTools::disconnected()
@@ -84,12 +86,12 @@ void ServerTools::readyRead()
     for(int i=0; i<pieces.size(); i++){
         QString data = pieces.at(i);
         qDebug() << data;
-        if(data == "add player"){
+        if(data.contains("player_intro")){
             _state = CLIENT_STATE::VOTING;
             _players.append(name);
             emit playersChanged();
             emit stateChanged(_state);
-        }else if(data == "waiting for game"){
+        }else if(data == "vote_accepted"){
             _state = CLIENT_STATE::WAIT_FOR_GAME;
             emit stateChanged(_state);
         }else if(data.contains("new player: ")){ // po polaczeniu serwer powinien do nowego gracza wyslac kilka takich komunikatow

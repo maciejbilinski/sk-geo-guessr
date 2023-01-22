@@ -25,7 +25,7 @@ Client::Client(int fd, Server* server):
                             Packet packetReturn("error", "Name exists");
                             WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
                             }, [this](){
-                            }, packet);
+                            }, packetReturn);
                             addWriter(writer);
                             this->onRemove(true);
                             return;
@@ -39,7 +39,7 @@ Client::Client(int fd, Server* server):
                             Packet packetReturn("error", "Name exists");
                             WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
                             }, [this](){
-                            }, packet);
+                            }, packetReturn);
                             addWriter(writer);
                             this->onRemove(true);
                             return;
@@ -52,8 +52,46 @@ Client::Client(int fd, Server* server):
                         std::cout << "Error" << std::endl;
                     }, [this](){
                         std::cout << "Done npt" << std::endl;
-                    }, packet);
+                    }, packetReturn);
                     addWriter(writer);
+            }else if (packet.action=="vote") {
+
+                for(auto i=this->server->geoguessrGame.players.begin();i<this->server->geoguessrGame.players.end();++i){
+                    if((*i)->getName()==packet.content){
+                        this->server->geoguessrGame.votes.push_back((*i)->getFD());
+                        Packet packetReturn("player_vote", "ok");
+                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                        }, [this](){
+                        }, packetReturn);
+                        addWriter(writer);
+                        return;
+                    }    
+                }
+                        Packet packetReturn("player_vote", "not exists");
+                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                        }, [this](){
+                        }, packetReturn);
+                        addWriter(writer);
+            }else if (packet.action=="team") {
+                    std::string result_content="ok";
+                    if(packet.content=="Green") {
+                        this->server->geoguessrGame.teams.at("Green").add_player(this);
+                    }else if (packet.content=="Pink") {
+                        this->server->geoguessrGame.teams.at("Pink").add_player(this);
+                    }else if (packet.content=="Yellow") {
+                        this->server->geoguessrGame.teams.at("Yellow").add_player(this);
+                    }else if (packet.content=="Orange") {
+                        this->server->geoguessrGame.teams.at("Orange").add_player(this);
+                    }else{
+                        result_content="error";
+                    }
+                        Packet packetReturn("player_vote", result_content);
+                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
+                        }, [this](){
+                        }, packetReturn);
+                        addWriter(writer);
+                        return;
+                        
             }else{
                 std::cout << "Invalid data: '" << std::regex_replace(packet.toString(), std::regex("\n"), "\\n") << '\'' << std::endl;
                 this->onRemove(true);
@@ -97,6 +135,7 @@ void Client::handleEvent(unsigned int events){
 }
 
 void Client::onRemove(bool send){
+    
     if(send){
         Packet packet( "error", "disconnected");
         WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
@@ -130,4 +169,7 @@ void Client::addWriter(WriteBuffer* writer){
 
 void Client::setName(std::string name){
     this->name=name;
+}
+std::string Client::getName(){
+    return this->name;
 }

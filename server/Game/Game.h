@@ -13,10 +13,7 @@
 #include <thread>
 #include <set>
 class Game{    
-    std::map<int, Team> teams;
-
-    std::map<int,int> votes; //key: target player, value numer of votes
-
+    
 
     std::mutex mutex;
     int currentState; //enum: GameState.h
@@ -25,6 +22,9 @@ class Game{
     void gameLoop();
 
     public:
+    std::map<std::string, Team> teams;
+    std::vector<int> votes; //key: target player, value numer of votes
+
     std::vector<Client*> players;
     std::vector<Client*> players_queue;
     int time_counter;

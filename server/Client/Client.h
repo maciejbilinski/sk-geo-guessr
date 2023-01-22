@@ -13,17 +13,18 @@ class Client : public Handler{
         void waitForWrite(bool epollout);
     protected:
         std::string name;
-        int team_affilation;
+        std::string team_affilation;
         double coords[2];
 
         Server* server;
         ReadBuffer readBuffer;
         std::list<WriteBuffer*> writers;
 
-        void addWriter(WriteBuffer* writer);
         void onRemove(bool send);
     public:
+        void addWriter(WriteBuffer* writer);
         void setName(std::string);
+        std::string getName();
         Client(int fd, Server* server);
 
         virtual void hookEpoll(int epollFd);
