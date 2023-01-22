@@ -35,6 +35,12 @@ void Game::gameLoop(){
                                     }, [this](){
                             }, packet);
                             (*j)->addWriter(writer);
+
+                            Packet packet2("new_player", (*j)->getName());
+                            WriteBuffer* writer2 = new WriteBuffer((*i)->getFD(), [this](const Buffer& buffer){
+                                    }, [this](){
+                            }, packet2);
+                            (*i)->addWriter(writer2);
                         }
                     }
                     this->players.push_back(*i);

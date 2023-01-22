@@ -89,7 +89,7 @@ void ServerTools::readyRead()
     for(int i=0; i<pieces.size(); i++){
         QString data = pieces.at(i);
         qDebug() << data;
-        if(data.contains("player_intro")){
+        if(data.contains("action:player_intro;content:ok")){
             _state = CLIENT_STATE::VOTING;
             _players.append(name);
             emit playersChanged();
@@ -97,8 +97,8 @@ void ServerTools::readyRead()
         }else if(data == "vote_accepted"){
             _state = CLIENT_STATE::WAIT_FOR_GAME;
             emit stateChanged(_state);
-        }else if(data.contains("new_player")){ // po polaczeniu serwer powinien do nowego gracza wyslac kilka takich komunikatow
-            QString playerName = data.mid(12);
+        }else if(data.contains("action:new_player;content:")){ // po polaczeniu serwer powinien do nowego gracza wyslac kilka takich komunikatow
+            QString playerName = data.mid(26);
             _players.append(playerName);
             emit playersChanged();
         }else if(data.contains("del player: ")){
