@@ -44,8 +44,8 @@ void ServerTools::quit()
 void ServerTools::vote(QString player, QString team)
 {
     _team = team;
-    _socket.write(("action:vote ;content:" + player + ";\n").toLocal8Bit());
-    _socket.write(("action:team ;content:" + team + ";\n").toLocal8Bit());
+    _socket.write(("action:vote;content:" + player + ";\n").toLocal8Bit());
+    _socket.write(("action:team;content:" + team + ";\n").toLocal8Bit());
 
 }
 
