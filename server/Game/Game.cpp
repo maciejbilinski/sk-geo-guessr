@@ -13,7 +13,7 @@
 using namespace std::chrono;
 
 bool cmp(std::pair<std::string, double>& a,std::pair<std::string, double>& b){
-    return a.second > b.second;
+    return a.second < b.second;
 }
 void sort_map(std::map<std::string, double>& M)
 {
@@ -134,7 +134,7 @@ void Game::gameLoop(){
                     for(auto team:this->teams){
                         rank.insert_or_assign(team.first, team.second.calculate_points_distance(this->goal));
                     }
-                    sort_map(rank);                                 
+                    sort_map(rank);
                     best=0;
                     for(auto& team:rank){
                         best++;
