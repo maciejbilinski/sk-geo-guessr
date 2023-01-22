@@ -50,6 +50,7 @@ class Game{
 
     void startNewRound(Client* player, const Packet& packet);
     void vote(Client* player, const Packet& packet);
+    void setPlace(Client* player, const Packet& packet);
     
 };
 #endif

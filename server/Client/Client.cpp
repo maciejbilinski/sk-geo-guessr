@@ -38,30 +38,10 @@ Client::Client(int fd, Server* server):
                     return;
             }else if(packet.action == "host_place"){
                 this->server->geoguessrGame.startNewRound(this, packet);
-                //                        this->server->geoguessrGame.goal=Point(std::stod( tokens[2]),std::stod(tokens[1]));
                 return;
-            }else if(this->server->geoguessrGame.getCurrentState()==3 && packet.action == "set_place"){
-                std::string temp=packet.content;
-                std::replace(temp.begin(), temp.end(), ',', ' ');
-
-                std::stringstream ss(packet.content);
-                double temp2;
-                ss>>temp2;
-                double x = temp2;  
-                ss>>temp2;
-                double y=temp2;
-                std::cout<<x<<" "<<y<<std::endl;
-                this->server->geoguessrGame.teams.at(this->team_affilation).members_points.insert_or_assign(fd,Point(x,y));
-
-                Packet packetReturn("user_set_place",  std::to_string(x)+","+std::to_string(y));
-                for(int i=0;this->server->geoguessrGame.teams.at(this->team_affilation).members.size()>i;i++){
-                    if(this->server->geoguessrGame.teams.at(this->team_affilation).members.at(i)->getFD()!=fd){ // skip host
-                        WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                                }, [this](){
-                                }, packetReturn);
-                        this->server->geoguessrGame.teams.at(this->team_affilation).members.at(i)->addWriter(writer);
-                    }
-                }
+            }else if(packet.action == "set_place"){
+                this->server->geoguessrGame.setPlace(this, packet);
+                return;
             }else{
                 std::cout << "Invalid data: '" << std::regex_replace(packet.toString(), std::regex("\n"), "\\n") << '\'' << std::endl;
                 this->onRemove(true);

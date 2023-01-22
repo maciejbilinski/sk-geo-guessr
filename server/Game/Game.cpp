@@ -8,6 +8,7 @@
 #include <thread>
 #include <string>
 #include <chrono>
+#include <sstream>
 #include <bits/stdc++.h>
 using namespace std::chrono;
 
@@ -387,6 +388,7 @@ void Game::startNewRound(Client* player, const Packet& packet){
                 result_content="error";
             }else{
                 this->round++;
+                this->goal=Point(std::stod( tokens[2]),std::stod(tokens[1]));
                 auto ms = duration_cast< milliseconds >(
                     system_clock::now().time_since_epoch()
                 ).count() + 120000; // TODO: CONFIG
@@ -427,5 +429,38 @@ void Game::vote(Client* player, const Packet& packet){
         WriteBuffer* writer = new WriteBuffer(player->getFD(), [](const Buffer& buffer){}, [](){}, packetReturn);
         player->addWriter(writer);
     }
+    this->allMutex.unlock();
+}
+
+void Game::setPlace(Client* player, const Packet& packet){
+    this->allMutex.lock();
+
+    if(currentState==3){
+        std::string temp=packet.content;
+        std::replace(temp.begin(), temp.end(), ',', ' ');
+
+        std::stringstream ss(packet.content);
+        double temp2;
+        ss>>temp2;
+        double x = temp2;  
+        ss>>temp2;
+        double y=temp2;
+        std::cout<<x<<" "<<y<<std::endl;
+        this->teams.at(player->getTeamName()).members_points.insert_or_assign(player->getFD(),Point(x,y));
+
+        Packet packetReturn("user_set_place",  std::to_string(x)+","+std::to_string(y));
+        for(int i=0;this->teams.at(player->getTeamName()).members.size()>i;i++){
+            if(this->teams.at(player->getTeamName()).members.at(i)->getFD()!=player->getFD()){ // skip player
+                WriteBuffer* writer = new WriteBuffer(this->teams.at(player->getTeamName()).members.at(i)->getFD(), [](const Buffer& buffer){}, [](){}, packetReturn);
+                this->teams.at(player->getTeamName()).members.at(i)->addWriter(writer);
+            }
+        }
+    }else{
+        Packet packetReturn("set_place", "not_now");
+        WriteBuffer* writer = new WriteBuffer(player->getFD(), [](const Buffer& buffer){}, [](){}, packetReturn);
+        player->addWriter(writer);
+    }
+
+
     this->allMutex.unlock();
 }
