@@ -8,7 +8,7 @@ void Game::gameLoop(){
     
     while (true) {
         sleep(1);
-        printf("Time remain: %d \nGame state: %d \nNumber of players in queue: %lu \nNumber of players in game: %lu \n\n", this->time_counter,this->currentState, this->players_queue.size(), this->players.size());
+        printf("Players in teams: %d \nTime remain: %d \nGame state: %d \nNumber of players in queue: %lu \nNumber of players in game: %lu \n\n",this->teams.at("Green").members.size(), this->time_counter,this->currentState, this->players_queue.size(), this->players.size());
         
         if(this->currentState>1 && this->players.size()<1){
             this->currentState=0;

@@ -7,9 +7,9 @@
 #include "../Client/Client.h"
 class Team{
     int score = 0;
-    std::vector<Client*> members; //map aby było łatwiej potem wyrzucic usera
     
     public:
+    std::vector<Client*> members; //map aby było łatwiej potem wyrzucic usera
     std::string team_colour;
     Team(std::string team_colour);
     void broadcast_packet(Packet &packet);
