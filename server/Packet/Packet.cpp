@@ -15,12 +15,10 @@ Packet::Packet(std::string str){
         str.erase(0, pos + 1);
     }
 
-    if(tokens.size() != 3){
+    if(tokens.size() != 2){
         throw IncorrectPacket();
     }else{
         for (auto &token : tokens){
-            pos = token.find("state");
-            if(pos != 0){
                 pos = token.find("action");
                 if(pos != 0){
                     pos = token.find("content");
@@ -34,25 +32,18 @@ Packet::Packet(std::string str){
                     token.erase(0, 7);
                     this->action = token;
                 }
-            }else{
-                token.erase(0, 6);
-                int state = stoi(token);
-                if(!isValidGameState(state)) throw IncorrectPacket();
-                this->state = (GameState) state;
-            }
         }
     }
 }
 
-Packet::Packet(GameState gameState, std::string action, std::string content){
-    this->state = gameState;
+Packet::Packet( std::string action, std::string content){
     this->action = action;
     this->content = content;
 }
 
 std::string Packet::toString() const{
     std::stringstream ss;
-    ss << "s:" << this->state << " o:" << this->action << " c:" << this->content << std::endl;
+    ss <<  " o:" << this->action << " c:" << this->content << std::endl;
     return ss.str();
 }
 

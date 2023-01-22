@@ -11,9 +11,8 @@
 #include <unistd.h>
 #include <mutex>
 #include <thread>
-
+#include <set>
 class Game{    
-    std::vector<Client> players;
     std::map<int, Team> teams;
 
     std::map<int,int> votes; //key: target player, value numer of votes
@@ -26,6 +25,8 @@ class Game{
     void gameLoop();
 
     public:
+    std::vector<Client*> players;
+    std::vector<Client*> players_queue;
     int time_counter;
     void handlePacket(Packet &packet);
     void removePlayer(int fd); //remove from team list and game list

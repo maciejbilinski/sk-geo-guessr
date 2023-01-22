@@ -12,7 +12,7 @@ class Client : public Handler{
     private:
         void waitForWrite(bool epollout);
     protected:
-        std::optional<std::string> name;
+        std::string name;
         int team_affilation;
         double coords[2];
 
@@ -23,6 +23,7 @@ class Client : public Handler{
         void addWriter(WriteBuffer* writer);
         void onRemove(bool send);
     public:
+        void setName(std::string);
         Client(int fd, Server* server);
 
         virtual void hookEpoll(int epollFd);
