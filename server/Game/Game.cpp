@@ -21,8 +21,8 @@ void Game::gameLoop(){
             case 0:
                 if (this->players_queue.size()>0) {
                     (this->time_counter)=60; //TODO: set from config
-                    //(this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait 
-                    (this->currentState) = 2; // wchodzimy w stan admin panel dla testu; TODO: zmienić to
+                    (this->currentState)=1; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait 
+                    //(this->currentState) = 2; // wchodzimy w stan admin panel dla testu; TODO: zmienić to
                 }
             break;
             case 1:
