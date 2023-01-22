@@ -13,9 +13,9 @@ class Client : public Handler{
         void waitForWrite(bool epollout);
     protected:
         std::string name;
-        std::string team_affilation;
         double coords[2];
 
+        std::string team_affilation;
         Server* server;
         ReadBuffer readBuffer;
         std::list<WriteBuffer*> writers;
