@@ -505,7 +505,7 @@ void Game::startNewRound(Client *player, const Packet &packet)
             {
                 bool ok = false;
                 try{
-                    this->goal = Point(std::stod(tokens[2]), std::stod(tokens[1]));
+                    this->goal = Point(std::stod(tokens[1]), std::stod(tokens[2]));
                     ok = true;
                 }catch(std::exception& e){
                     result_content = "bad_format";
@@ -612,8 +612,8 @@ void Game::setPlace(Client *player, const Packet &packet)
         if(ok){
             double x, y;
             try{
-                x = std::stod(tokens[1]);
-                y =std::stod(tokens[0]);
+                x = std::stod(tokens[0]);
+                y =std::stod(tokens[1]);
             }catch(std::exception& e){
                 result_content = "bad_format";
                 ok = false;
@@ -623,7 +623,7 @@ void Game::setPlace(Client *player, const Packet &packet)
                 std::cout << "Place from " << player->getName() << ": " << x << " " << y << std::endl;
                 this->teams.at(player->getTeamName()).members_points.insert_or_assign(player->getFD(), Point(x, y));
 
-                Packet packetReturn("user_set_place", std::to_string(x) + "," + std::to_string(y));
+                Packet packetReturn("user_set_place", player->getName() + "," + std::to_string(x) + "," + std::to_string(y));
                 for (int i = 0; this->teams.at(player->getTeamName()).members.size() > i; i++)
                 {
                     Client* cl = this->teams.at(player->getTeamName()).members.at(i);
@@ -649,7 +649,7 @@ void Game::setPlace(Client *player, const Packet &packet)
             std::cout << "Error during set_place " << result_content << " packet to " << player->getName() << std::endl;
 
         }, [player, result_content]() {
-            std::cout << "Error during set_place " << result_content << " packet to " << player->getName() << std::endl;
+            std::cout << "Sent set_place " << result_content << " packet to " << player->getName() << std::endl;
         }, packetReturn);
     player->addWriter(writer);
     
