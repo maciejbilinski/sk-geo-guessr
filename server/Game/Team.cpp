@@ -24,16 +24,19 @@ void Team::removeAfk(std::function<void(Client*)> onRemove){
 }
 
 double Team::calculate_points_distance(Point goal){
-    double x,y=0;
+    double x=0,y=0;
     for(auto point: this->members_points){
         x+=point.second.x;
         y+=point.second.y;
+    }
+    if((double)this->members_points.size()==0){
+        return 0;
     }
     x=x/(double)this->members_points.size();
     y=y/(double)this->members_points.size();
     x-=goal.x;
     y-=goal.y;
-
+    
     return std::pow(y*y+x*x,0.5);
 }
 void Team::add_player(Client *client){

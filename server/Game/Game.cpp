@@ -12,18 +12,22 @@
 #include <bits/stdc++.h>
 using namespace std::chrono;
 
-bool cmp(std::pair<std::string, double> &a, std::pair<std::string, double> &b)
-{
-    return a.second < b.second;
-}
-void sort_map(std::map<std::string, double> &M)
+std::vector<std::string> sort_map(std::map<std::string, double> &M)
 {
     std::vector<std::pair<std::string, double>> A;
     for (auto &it : M)
     {
+        if(it.second<0)
+            it.second=0;
         A.push_back(it);
     }
-    sort(A.begin(), A.end(), cmp);
+    std::vector<std::string> rnd;
+    sort(A.begin(), A.end(), [] (const auto &x, const auto &y) {return x.second > y.second;});
+    for (auto& it : A) {
+        std::cout << it.first << ' '<< it.second << std::endl;
+        rnd.push_back(it.first);
+    }
+    return rnd;
 }
 
 void Game::gameLoop()
@@ -184,12 +188,12 @@ void Game::gameLoop()
                             });
                     team.second.members_points.clear();
                 }
-                sort_map(rank);
-                best = 0;
-                for (auto &team : rank)
+                
+
+                for (auto pair : sort_map(rank))
                 {
-                    best++;
-                    ranking += team.first + " ";
+                    std::cout<<pair<<std::endl;
+                    ranking += pair + " ";
                 }
                 {
 
