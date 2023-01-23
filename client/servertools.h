@@ -13,7 +13,7 @@ class ServerTools : public QObject
 public:
     explicit ServerTools(QObject* parent = nullptr);
 
-    Q_INVOKABLE void connect(QString name, int port);
+    Q_INVOKABLE void connect(QString name, QString addr, int port);
     Q_INVOKABLE void quit();
     Q_INVOKABLE void vote(QString player, QString team);
     Q_INVOKABLE void sendPhoto(QString photo, double latitude, double longitude);

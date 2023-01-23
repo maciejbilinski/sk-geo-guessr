@@ -189,6 +189,12 @@ Window {
                     Layout.alignment: Qt.AlignLeft
                     font.pointSize: labelFontSize
                 }
+                TextField {
+                    Layout.alignment: Qt.AlignLeft
+                    Layout.preferredWidth: controlWidth
+                    id: addrText
+                    text: '127.0.0.1'
+                }
                 ComboBox {
                     id: serverCB
                     Layout.alignment: Qt.AlignLeft
@@ -196,6 +202,18 @@ Window {
                     model: ListModel {
                         ListElement {
                             text: "50000"
+                        }
+                        ListElement {
+                            text: "50001"
+                        }
+                        ListElement {
+                            text: "50002"
+                        }
+                        ListElement {
+                            text: "50003"
+                        }
+                        ListElement {
+                            text: "50004"
                         }
                     }
                 }
@@ -240,7 +258,7 @@ Window {
                 onClicked: function () {
                     introduction.visible = false
                     loader.visible = true
-                    serverTools.connect(nameTF.text,
+                    serverTools.connect(nameTF.text, addrText.text,
                                         parseInt(serverCB.currentText))
                 }
             }

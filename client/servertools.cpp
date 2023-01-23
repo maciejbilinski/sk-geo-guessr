@@ -10,7 +10,7 @@ ServerTools::ServerTools(QObject* parent) : QObject(parent), timer(this)
 
 }
 
-void ServerTools::connect(QString name, int port)
+void ServerTools::connect(QString name, QString addr, int port)
 {
     if(_state <= 0){
         this->name = name;
@@ -20,7 +20,7 @@ void ServerTools::connect(QString name, int port)
         QObject::connect(&_socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
         QObject::connect(&_socket, SIGNAL(readyRead()),this, SLOT(readyRead()));
         QObject::connect(&_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError()));
-        _socket.connectToHost(QHostAddress("127.0.0.1"), port);
+        _socket.connectToHost(QHostAddress(addr), port);
     }else{
         qDebug() << "Server already connected!";
     }
