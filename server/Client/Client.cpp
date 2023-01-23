@@ -7,7 +7,6 @@
 #include "../exceptions/HandlerNotHooked.h"
 #include "../Server/Server.h"
 #include "../Game/Team.h"
-using namespace std::chrono;
 
 Client::Client(int fd, Server* server): 
     server{server}, 
@@ -32,7 +31,11 @@ Client::Client(int fd, Server* server):
                     result_content="error";
                 }
                 Packet packetReturn("player_vote", result_content);
-                WriteBuffer* writer = new WriteBuffer(this->fd, [](const Buffer& buffer){}, [](){}, packetReturn);
+                WriteBuffer* writer = new WriteBuffer(this->fd, [this, result_content](const Buffer& buffer){
+                    std::cout << "Error during player_vote " << result_content << " packet to " << this->getName() << std::endl;
+                }, [this, result_content](){
+                    std::cout << "Sent during player_vote " << result_content << " packet to " << this->getName() << std::endl;
+                }, packetReturn);
                 addWriter(writer);
             }else if(packet.action == "host_place"){
                 this->server->geoguessrGame.startNewRound(this, packet);
@@ -79,6 +82,9 @@ void Client::handleEvent(unsigned int events){
         }
 
     }else throw HandlerNotHooked();
+}
+void Client::removeTeam(){
+    this->team_affilation = "";
 }
 
 void Client::onRemove(bool send){

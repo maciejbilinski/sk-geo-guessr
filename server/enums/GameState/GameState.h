@@ -9,7 +9,7 @@ enum GameState{
     VOTING = 1,
     ADMIN_PANEL = 2,
     GAME = 3,
-    STATUS = 4
+    END = 4
 };
 
 #endif // __GameState__

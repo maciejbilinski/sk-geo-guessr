@@ -10,12 +10,8 @@
 #include "Team.h"
 #include "Point.h"
 #include <unistd.h>
-#include <mutex>
-#include <thread>
 #include <set>
 class Game{    
-    std::mutex allMutex;    
-
     int currentState; //enum: GameState.h
     
     int round;
@@ -34,13 +30,15 @@ class Game{
 
     int time_counter;
 
-    void _addPlayer(Client* player, bool inQueue, bool lock);
+    void _addPlayer(Client* player, bool inQueue);
+    bool checkNameExists(Client* player);
 
+    void backToVoting(bool send);
     
-    void gameLoop();
 
     public:
-    void handlePacket(Packet &packet);
+    void gameLoop();
+    int getTime();
     void removePlayer(int fd); //remove from team list and game list
     void newPlace();
     Game();

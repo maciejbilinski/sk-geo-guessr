@@ -45,24 +45,31 @@ void ServerTools::vote(QString player, QString team)
 {
     _team = team;
     _socket.write(("action:vote;content:" + player + ";\n").toLocal8Bit());
+    qDebug() << "SENT action:vote;content:" + player + ";\n";
     _socket.write(("action:team;content:" + team + ";\n").toLocal8Bit());
+    qDebug() << "SENT action:team;content:" + team + ";\n";
 
 }
 
 void ServerTools::sendPhoto(QString photo, double latitude, double longitude)
 {
-    _socket.write(("action:host_place;content:" + photo + " " + QString::number(latitude) + " " + QString::number(longitude) + ";\n").toLocal8Bit());
+    _state = CLIENT_STATE::WAIT_FOR_RANKING;
+    emit stateChanged(_state);
+    _socket.write(("action:host_place;content:" + photo + " " + QString::number(latitude) + " " + QString::number(longitude) + " ;\n").toLocal8Bit());
+    qDebug() << "SENT action:host_place;content:" + photo + " " + QString::number(latitude) + " " + QString::number(longitude) + " ;\n";
 }
 
 void ServerTools::sendAnswer(double latitude, double longitude)
 {
-    _socket.write(("action:set_place;" + QString::number(latitude) + "," + QString::number(longitude) + ";\n").toLocal8Bit());
+    _socket.write(("action:set_place;content:" + QString::number(latitude) + " " + QString::number(longitude) + " ;\n").toLocal8Bit());
+    qDebug() << "SENT action:set_place;content:" + QString::number(latitude) + " " + QString::number(longitude) + " ;\n";
 }
 
 void ServerTools::connected()
 {
     qDebug() << "connected...";
     _socket.write(("content:"+ this->name + ";action:player_intro;\n").toLocal8Bit());
+    qDebug() << "SENT content:"+ this->name + ";action:player_intro;\n";
 }
 
 void ServerTools::disconnected()
@@ -108,6 +115,9 @@ void ServerTools::readyRead()
         }else if(data == "action:player_vote;content:ok"){
             _state = CLIENT_STATE::WAIT_FOR_RANKING;
             emit stateChanged(_state);
+        }else if(data == "action:voting_failed;content:"){
+            _state = CLIENT_STATE::VOTING;
+            emit stateChanged(_state);
         }else if(data.contains("action:ranking;content:")){
             QString rank = data.mid(23);
             QStringList ranks = rank.split( " " );
@@ -117,6 +127,11 @@ void ServerTools::readyRead()
                 _ranking.append(r);
             }
             emit rankingChanged();
+            if(_state == CLIENT_STATE::GAME){
+                _state = CLIENT_STATE::WAIT_FOR_RANKING;
+                emit stateChanged(_state);
+            }
+
         }else if(data.contains("action:host;content:")){
             _round = 1;
             emit roundChanged();
@@ -125,6 +140,11 @@ void ServerTools::readyRead()
                 _state = CLIENT_STATE::ADMIN_PANEL;
                 emit stateChanged(_state);
             }
+        }else if(data.contains("action:round;content:")){
+            _round = data.mid(21).toInt();
+            emit roundChanged();
+            _state = CLIENT_STATE::ADMIN_PANEL;
+            emit stateChanged(_state);
         }else if(data.contains("action:place;content:")){
             QStringList subdata = data.mid(21).split(" ");
             _round = subdata[0].toInt();

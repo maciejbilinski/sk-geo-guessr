@@ -22,6 +22,7 @@ class Client : public Handler{
 
     public:
         void onRemove(bool send);
+        void removeTeam();
         void addWriter(WriteBuffer* writer);
         void setName(std::string);
         std::string getName();
