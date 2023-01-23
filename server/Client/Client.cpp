@@ -7,7 +7,6 @@
 #include "../exceptions/HandlerNotHooked.h"
 #include "../Server/Server.h"
 #include "../Game/Team.h"
-using namespace std::chrono;
 
 Client::Client(int fd, Server* server): 
     server{server}, 
@@ -24,7 +23,6 @@ Client::Client(int fd, Server* server):
                 this->server->geoguessrGame.addPlayer(this);
             }else if (packet.action=="vote") {
                 this->server->geoguessrGame.vote(this, packet);
-                return;
             }else if (packet.action=="team") {
                 std::string result_content="ok";
                 if(this->server->geoguessrGame.addToTeam(this, packet.content)){
@@ -33,15 +31,16 @@ Client::Client(int fd, Server* server):
                     result_content="error";
                 }
                 Packet packetReturn("player_vote", result_content);
-                WriteBuffer* writer = new WriteBuffer(fd, [](const Buffer& buffer){}, [](){}, packetReturn);
+                WriteBuffer* writer = new WriteBuffer(this->fd, [this, result_content](const Buffer& buffer){
+                    std::cout << "Error during player_vote " << result_content << " packet to " << this->getName() << std::endl;
+                }, [this, result_content](){
+                    std::cout << "Sent during player_vote " << result_content << " packet to " << this->getName() << std::endl;
+                }, packetReturn);
                 addWriter(writer);
-                return;
             }else if(packet.action == "host_place"){
                 this->server->geoguessrGame.startNewRound(this, packet);
-                return;
             }else if(packet.action == "set_place"){
                 this->server->geoguessrGame.setPlace(this, packet);
-                return;
             }else{
                 std::cout << "Invalid data: '" << std::regex_replace(packet.toString(), std::regex("\n"), "\\n") << '\'' << std::endl;
                 this->onRemove(true);
@@ -51,7 +50,6 @@ Client::Client(int fd, Server* server):
 {
     this->fd = fd;
     this->name ="";
-    // server->geoguessrGame.time_counter=93;
 }
 
 void Client::hookEpoll(int epollFd){
@@ -62,10 +60,6 @@ void Client::hookEpoll(int epollFd){
 
 void Client::handleEvent(unsigned int events){
     if(hooked){
-        if(events & EPOLLIN ){
-            readBuffer.read();
-        }
-
         if(events & EPOLLOUT) {
             do {
                 WriteBuffer* writer =  writers.front();
@@ -82,24 +76,30 @@ void Client::handleEvent(unsigned int events){
                 }
             } while(false);
         }
+
+        if(events & EPOLLIN ){
+            readBuffer.read();
+        }
+
     }else throw HandlerNotHooked();
+}
+void Client::removeTeam(){
+    this->team_affilation = "";
 }
 
 void Client::onRemove(bool send){
-
     if(send){
         Packet packet( "error", "disconnected");
         WriteBuffer* writer = new WriteBuffer(fd, [this](const Buffer& buffer){
-                std::cout << "Error during disconnecting client" << std::endl;
-                this->server->onClientRemove(this);
-                }, [this](){
-                this->server->onClientRemove(this);
-                }, packet);
+            std::cout << "Error during disconnecting client" << std::endl;
+            this->server->onClientRemove(this);
+        }, [this](){
+            this->server->onClientRemove(this);
+        }, packet);
         addWriter(writer);
     }else{
         this->server->onClientRemove(this);
     }
-    this->server->geoguessrGame.removePlayer(this->fd);
 }
 
 void Client::waitForWrite(bool epollout) {
@@ -112,6 +112,8 @@ void Client::addWriter(WriteBuffer* writer){
         if(!writer->write()){
             this->writers.push_back(writer);
             waitForWrite(true);
+        }else{
+            delete writer;
         }
     }else{
         writers.push_back(writer);
@@ -126,4 +128,11 @@ std::string Client::getName(){
 }
 std::string Client::getTeamName(){
     return this->team_affilation;
+}
+
+Client::~Client(){
+    for(auto it=writers.begin(); it!=writers.end(); ++it){
+        delete (*it);
+    }
+    Handler::~Handler();
 }

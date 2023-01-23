@@ -70,6 +70,7 @@ void Server::handleEvent(unsigned int events){
 
 void Server::onClientRemove(Client* client){
     this->clients.erase(client);
+    this->geoguessrGame.removePlayer(client->getFD());
     delete client;
     if(log){
         std::cout << "Disconnected client" << std::endl;

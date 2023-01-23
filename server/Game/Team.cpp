@@ -6,7 +6,7 @@ Team::Team(std::string team_colour){
 void Team::broadcast_packet(Packet &packet){
 }
 
-void Team::removeAfk(){
+void Team::removeAfk(std::function<void(Client*)> onRemove){
     bool was=false;
     for(auto member:this->members){
         was=false;
@@ -16,8 +16,8 @@ void Team::removeAfk(){
                 break;
             }
             if(!was){
-                member->onRemove(true);
                 this->remove_player(member->getFD());
+                onRemove(member);
             }
         }    
     }

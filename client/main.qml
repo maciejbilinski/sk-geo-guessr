@@ -265,7 +265,7 @@ Window {
             }
             Text {
                 id: waiting_for_game
-                text: qsTr("Game has already started, waiting for next round")
+                text: qsTr("Game has already started or waits for more players")
                 color: "#ffffff"
                 visible: false
             }

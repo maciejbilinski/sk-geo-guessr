@@ -14,19 +14,21 @@ class Client : public Handler{
     protected:
         std::string name;
         double coords[2];
-
         std::string team_affilation;
+
         Server* server;
         ReadBuffer readBuffer;
         std::list<WriteBuffer*> writers;
 
     public:
         void onRemove(bool send);
+        void removeTeam();
         void addWriter(WriteBuffer* writer);
         void setName(std::string);
         std::string getName();
         std::string getTeamName();
         Client(int fd, Server* server);
+        virtual ~Client();
 
         virtual void hookEpoll(int epollFd);
         virtual void handleEvent(unsigned int events);

@@ -8,12 +8,8 @@
 #include "Handler/Handler.h"
 #include <sys/epoll.h>
 #include <vector>
-
-// TODO: move to config file
-namespace Settings{
-    int EPOLL_TIMEOUT = -1; // -1 == infinity
-    int EPOLL_MAX_EVENTS = 1; 
-}
+#include <chrono>
+using namespace std::chrono;
 
 namespace ServerGlobal{
     Server* server = nullptr;
@@ -44,13 +40,39 @@ int main(int argc, char const *argv[]){
 
         epoll_event ee;
 
+        auto last = duration_cast< milliseconds >(
+            system_clock::now().time_since_epoch()
+        ).count();
+        int n;
+        long long timeout;
         while(true){
-            if(-1 == epoll_wait(fd, &ee, Settings::EPOLL_MAX_EVENTS, Settings::EPOLL_TIMEOUT) && errno!=EINTR)
+            timeout = 1000 - duration_cast< milliseconds >(
+                system_clock::now().time_since_epoch()
+            ).count() + last;
+            if(timeout < 0){ // minela ponad 1s od poprzedniego razu
+                server->geoguessrGame.gameLoop();
+                last = duration_cast< milliseconds >(
+                    system_clock::now().time_since_epoch()
+                ).count();
+                timeout = 1000;
+            }// else minelo mniej niz sekunda czekamy tyle, zeby co ok. 1s wykonywac
+
+            n = epoll_wait(fd, &ee, 1, timeout); // mamy timeout na epollu zamiast drugiego wątku
+            // gameLoop zostanie wywołany co około sekundę (niedokładnie, ale poprzednio przez mutexy też tak było)
+            if(n == -1 && errno != EINTR){
                 throw EpollFailed();
-            ((Handler*)ee.data.ptr)->handleEvent(ee.events);
+            }else if(n == 0){ // minal timeout
+                server->geoguessrGame.gameLoop();
+                last = duration_cast< milliseconds >(
+                    system_clock::now().time_since_epoch()
+                ).count();
+            }else{
+                ((Handler*)ee.data.ptr)->handleEvent(ee.events);
+                // wykonanie tego zajmuje troche czasu, ale na pewno nie zblokuje game loopa na długo
+            }
         }
     }catch(std::exception& e){
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Exception" << std::endl << '\t' << e.what() << std::endl;
         closeServer(0);
     }
 }

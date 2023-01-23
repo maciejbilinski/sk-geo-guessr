@@ -16,7 +16,7 @@ class Team{
     std::string team_colour;
     Team(std::string team_colour);
     void broadcast_packet(Packet &packet);
-    void removeAfk();
+    void removeAfk(std::function<void(Client*)> onRemove);
     double calculate_points_distance(Point point); 
     void add_player(Client* client);
     void remove_player(int client_fd);
