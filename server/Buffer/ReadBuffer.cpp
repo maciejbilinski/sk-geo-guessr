@@ -25,6 +25,7 @@ void ReadBuffer::read(){
                     Packet packet(fullMsg);
                     this->onPacket(packet);
                 }catch(const std::exception& e){
+                    std::cout << "Parsing packet error" << std::endl;
                     this->onError(*this);
                 }
                 auto nextmsgslen =  pos - thismsglen - 1;

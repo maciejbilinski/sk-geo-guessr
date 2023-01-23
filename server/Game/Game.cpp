@@ -26,8 +26,6 @@ void sort_map(std::map<std::string, double> &M)
     sort(A.begin(), A.end(), cmp);
 }
 
-
-
 void Game::gameLoop()
 {
     if(this->time_counter % 5 == 0)
@@ -81,18 +79,21 @@ void Game::gameLoop()
             case GameState::VOTING:
                 (this->time_counter) = this->ADMIN_PANEL_TIME;
                 (this->currentState) = GameState::ADMIN_PANEL; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait
+                this->round = 0;
                 for (auto vote : this->votes)
                 {
                     if (temp.find(vote) == temp.end())
                     {
-                        temp.insert(std::pair<int, int>(vote, 1));
-                    }
-                    else
-                    {
-                        temp[vote] = temp[vote] + 1;
+                        if (temp.find(vote) == temp.end())
+                        {
+                            temp.insert(std::pair<int, int>(vote, 1));
+                        }
+                        else
+                        {
+                            temp[vote] = temp[vote] + 1;
+                        }
                     }
                 }
-
                 for (auto player : temp)
                 {
                     if (player.second > max)
@@ -151,15 +152,37 @@ void Game::gameLoop()
                     (this->time_counter) = this->END_TIME;
                     (this->currentState) = GameState::END; // koniec gry, dajemy czas na zobaczenie rankingu
                 }else{
-
                     (this->time_counter) = this->ADMIN_PANEL_TIME;
                     (this->currentState) = GameState::ADMIN_PANEL;  // koniec rundy, host wstawia nowe zdjecie
                 }
-
+                {
+                Packet pck("round", std::to_string(this->round+1));
+                WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, pck](const Buffer &buffer) {
+                        std::cout << "Error during round " << pck.action << " packet to " << host->getName() << std::endl;
+                        }, [this, pck]() {
+                        std::cout << "Sent round " << pck.action << " packet to " << host->getName() << std::endl;
+                        }, pck);
+                host->addWriter(writer);
+                if(currentState != GameState::END){
+                    Packet pck("round", std::to_string(this->round));
+                    WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, pck](const Buffer &buffer) {
+                            std::cout << "Error during round " << pck.content << " packet to " << host->getName() << std::endl;
+                            }, [this, pck]() {
+                            std::cout << "Sent round " << pck.content << " packet to " << host->getName() << std::endl;
+                            }, pck);
+                    host->addWriter(writer);
+                }
+                }
 
                 for (auto team : this->teams)
                 {
                     rank.insert_or_assign(team.first, team.second.calculate_points_distance(this->goal));
+                    team.second.removeAfk([this](Client* toRemove){
+                            std::cout << "Removed " << toRemove->getName() << " because was afk" << std::endl;
+                            this->removePlayer(toRemove->getFD());
+                            toRemove->onRemove(true);
+                            });
+                    team.second.members_points.clear();
                 }
                 sort_map(rank);
                 best = 0;
@@ -170,67 +193,67 @@ void Game::gameLoop()
                 }
                 {
 
-                if(this->round >= this->MAX_ROUND){
-                    Packet packet("rankine", ranking);
-                    std::cout << "Try to send ranking packet:" << std::endl << '\t';
-                    packet.print();
+                    if(this->round >= this->MAX_ROUND){
+                        Packet packet("rankine", ranking);
+                        std::cout << "Try to send ranking packet:" << std::endl << '\t';
+                        packet.print();
 
-                    for (auto j = this->players.begin(); j < this->players.end(); j++)
-                    {
-                        WriteBuffer *writer = new WriteBuffer((*j)->getFD(), [j](const Buffer &buffer) {
-                                std::cout << "Error during ranking packet to " << (*j)->getName() << std::endl;
-                                }, [j]() {
-                                std::cout << "Sent ranking packet to " << (*j)->getName() << std::endl;
-                                }, packet);
-                        (*j)->addWriter(writer);
-                    }
-                     WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, packet](const Buffer &buffer) {
+                        for (auto j = this->players.begin(); j < this->players.end(); j++)
+                        {
+                            WriteBuffer *writer = new WriteBuffer((*j)->getFD(), [j](const Buffer &buffer) {
+                                    std::cout << "Error during ranking packet to " << (*j)->getName() << std::endl;
+                                    }, [j]() {
+                                    std::cout << "Sent ranking packet to " << (*j)->getName() << std::endl;
+                                    }, packet);
+                            (*j)->addWriter(writer);
+                        }
+                        WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, packet](const Buffer &buffer) {
                                 std::cout << "Error during ranking packet to " << host->getName() << std::endl;
                                 }, [this, packet]() {
                                 std::cout << "Sent ranking packet to " << host->getName() << std::endl;
                                 }, packet);
                         host->addWriter(writer);
-                    
-                    for (auto team : this->teams)
-                    {
-                        team.second.removeAfk([this](Client* toRemove){
-                                this->removePlayer(toRemove->getFD());
-                                toRemove->onRemove(true);
-                                });
-                        team.second.members_points.clear();
-                    }
-                }else{
-                    Packet packet("ranking", ranking);
-                    std::cout << "Try to send ranking packet:" << std::endl << '\t';
-                    packet.print();
 
-                    for (auto j = this->players.begin(); j < this->players.end(); j++)
-                    {
-                        WriteBuffer *writer = new WriteBuffer((*j)->getFD(), [j](const Buffer &buffer) {
-                                std::cout << "Error during ranking packet to " << (*j)->getName() << std::endl;
-                                }, [j]() {
-                                std::cout << "Sent ranking packet to " << (*j)->getName() << std::endl;
-                                }, packet);
-                        (*j)->addWriter(writer);
-                    }
+                        for (auto team : this->teams)
+                        {
+                            team.second.removeAfk([this](Client* toRemove){
+                                    this->removePlayer(toRemove->getFD());
+                                    toRemove->onRemove(true);
+                                    });
+                            team.second.members_points.clear();
+                        }
+                    }else{
+                        Packet packet("ranking", ranking);
+                        std::cout << "Try to send ranking packet:" << std::endl << '\t';
+                        packet.print();
 
-                    Packet pck("round", std::to_string(this->round));
-                    WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, pck](const Buffer &buffer) {
-                            std::cout << "Error during round " << pck.action << " packet to " << host->getName() << std::endl;
-                            }, [this, pck]() {
-                            std::cout << "Sent round " << pck.action << " packet to " << host->getName() << std::endl;
-                            }, pck);
-                    host->addWriter(writer);
+                        for (auto j = this->players.begin(); j < this->players.end(); j++)
+                        {
+                            WriteBuffer *writer = new WriteBuffer((*j)->getFD(), [j](const Buffer &buffer) {
+                                    std::cout << "Error during ranking packet to " << (*j)->getName() << std::endl;
+                                    }, [j]() {
+                                    std::cout << "Sent ranking packet to " << (*j)->getName() << std::endl;
+                                    }, packet);
+                            (*j)->addWriter(writer);
+                        }
 
-                    for (auto team : this->teams)
-                    {
-                        team.second.removeAfk([this](Client* toRemove){
-                                this->removePlayer(toRemove->getFD());
-                                toRemove->onRemove(true);
-                                });
-                        team.second.members_points.clear();
+                        Packet pck("round", std::to_string(this->round));
+                        WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, pck](const Buffer &buffer) {
+                                std::cout << "Error during round " << pck.action << " packet to " << host->getName() << std::endl;
+                                }, [this, pck]() {
+                                std::cout << "Sent round " << pck.action << " packet to " << host->getName() << std::endl;
+                                }, pck);
+                        host->addWriter(writer);
+
+                        for (auto team : this->teams)
+                        {
+                            team.second.removeAfk([this](Client* toRemove){
+                                    this->removePlayer(toRemove->getFD());
+                                    toRemove->onRemove(true);
+                                    });
+                            team.second.members_points.clear();
+                        }
                     }
-                }
                 }
                 break;
             case GameState::END:
@@ -565,8 +588,8 @@ void Game::startNewRound(Client *player, const Packet &packet)
                             system_clock::now().time_since_epoch())
                         .count() +
                         this->GAME_TIME*1000; // TODO: CONFIG
+                    Packet packet("place", std::to_string(this->round+1) + " " + tokens[0] + " " + std::to_string(ms));
                     this->newPlace();
-                    Packet packet("place", std::to_string(this->round) + " " + tokens[0] + " " + std::to_string(ms));
                     std::cout << "Try to send place packet" << std::endl << '\t';
                     packet.print();
                     for (int i = 0; this->players.size() > i; i++)
@@ -602,7 +625,7 @@ void Game::startNewRound(Client *player, const Packet &packet)
             }, packetReturn);
     player->addWriter(writer);
     Packet pck("round_time", std::to_string(this->round)+" "+std::to_string(duration_cast<milliseconds>(
-                system_clock::now().time_since_epoch())
+                    system_clock::now().time_since_epoch())
                 .count() +
                 this->GAME_TIME*1000));
     WriteBuffer *writerround = new WriteBuffer(host->getFD(), [this, pck](const Buffer &buffer) {
