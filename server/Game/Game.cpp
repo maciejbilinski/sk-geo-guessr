@@ -231,6 +231,7 @@ void Game::removePlayer(int fd){
             if((*i)->getFD()==fd){
                 this->players.erase(i);
                 name = (*i)->getName();
+                this->teams.at((*i)->getTeamName()).remove_player((*i)->getFD());
                 found = true;
                 break;
             }

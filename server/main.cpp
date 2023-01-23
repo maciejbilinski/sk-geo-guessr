@@ -12,7 +12,6 @@
 // TODO: move to config file
 namespace Settings{
     int EPOLL_TIMEOUT = -1; // -1 == infinity
-    int EPOLL_MAX_EVENTS = 1; 
 }
 
 namespace ServerGlobal{
@@ -45,7 +44,7 @@ int main(int argc, char const *argv[]){
         epoll_event ee;
 
         while(true){
-            if(-1 == epoll_wait(fd, &ee, Settings::EPOLL_MAX_EVENTS, Settings::EPOLL_TIMEOUT) && errno!=EINTR)
+            if(-1 == epoll_wait(fd, &ee, 1, Settings::EPOLL_TIMEOUT) && errno!=EINTR)
                 throw EpollFailed();
             ((Handler*)ee.data.ptr)->handleEvent(ee.events);
         }

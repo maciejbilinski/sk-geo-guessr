@@ -14,8 +14,8 @@ class Client : public Handler{
     protected:
         std::string name;
         double coords[2];
-
         std::string team_affilation;
+
         Server* server;
         ReadBuffer readBuffer;
         std::list<WriteBuffer*> writers;
@@ -27,6 +27,7 @@ class Client : public Handler{
         std::string getName();
         std::string getTeamName();
         Client(int fd, Server* server);
+        virtual ~Client();
 
         virtual void hookEpoll(int epollFd);
         virtual void handleEvent(unsigned int events);
