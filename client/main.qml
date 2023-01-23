@@ -18,10 +18,10 @@ Window {
     property int buttonMargin: 20
     property int buttonPadding: 15
 
-    property string noPhoto: "https://t4.ftcdn.net/jpg/04/70/29/97/360_F_470299797_UD0eoVMMSUbHCcNJCdv2t8B2g1GVqYgs.jpg";
+    property string noPhoto: "https://t4.ftcdn.net/jpg/04/70/29/97/360_F_470299797_UD0eoVMMSUbHCcNJCdv2t8B2g1GVqYgs.jpg"
     property string errorPhoto: "https://www.salonlfc.com/wp-content/uploads/2018/01/image-not-found-1-scaled-1150x647.png"
 
-    property bool alreadyAnswered: false;
+    property bool alreadyAnswered: false
 
     id: root
     width: 1280
@@ -39,117 +39,126 @@ Window {
     }
 
     function _timer() {
-        return Qt.createQmlObject("import QtQuick 2.0; Timer {}", root);
+        return Qt.createQmlObject("import QtQuick 2.0; Timer {}", root)
     }
 
     function countChar(word, c) {
-      var count = 0
-      for (let i = 0; i <= word.length; i++) {
-        if (c.includes(word.charCodeAt(i))) {
-          count += 1
+        var count = 0
+        for (var i = 0; i <= word.length; i++) {
+            if (c.includes(word.charCodeAt(i))) {
+                count += 1
+            }
         }
-      }
-      return count;
+        return count
     }
 
     function setTimeout(cb, delayTime) {
-        var timer = _timer();
-        timer.interval = delayTime;
-        timer.repeat = false;
-        timer.triggered.connect(cb);
-        timer.start();
+        var timer = _timer()
+        timer.interval = delayTime
+        timer.repeat = false
+        timer.triggered.connect(cb)
+        timer.start()
     }
 
-    ServerTools{
+    ServerTools {
         id: serverTools
-        onStateChanged: function(state){
-            introduction.visible = false;
-            loader.visible = false;
-            choose_team_and_host.visible = false;
-            waiting_for_game_ranking.visible = false;
-            game.visible = false;
-            admin_panel.visible = false;
-            introError.visible = false;
-            introNameError.visible = false;
-            waiting_for_game.visible = false;
+        onStateChanged: function (state) {
+            introduction.visible = false
+            loader.visible = false
+            choose_team_and_host.visible = false
+            waiting_for_game_ranking.visible = false
+            game.visible = false
+            admin_panel.visible = false
+            introError.visible = false
+            introNameError.visible = false
+            host_preview_game.visible = false
+            waiting_for_game.visible = false
 
-            if(state <= 0){
-                if(state === ServerTools.ERROR){
-                    introduction.visible = true;
-                    introError.visible = true;
-                }else if(state === ServerTools.NAME_EXISTS){
-                    introduction.visible = true;
-                    introNameError.visible = true;
-                }else if(state === ServerTools.GAME_STARTED){
-                    loader.visible = true;
-                    waiting_for_game.visible = true;
-                }else{
-                    introduction.visible = true;
+            if (state <= 0) {
+                if (state === ServerTools.ERROR) {
+                    introduction.visible = true
+                    introError.visible = true
+                } else if (state === ServerTools.NAME_EXISTS) {
+                    introduction.visible = true
+                    introNameError.visible = true
+                } else if (state === ServerTools.GAME_STARTED) {
+                    loader.visible = true
+                    waiting_for_game.visible = true
+                } else {
+                    introduction.visible = true
                 }
-            }else if(state === ServerTools.WAIT_FOR_GAME){
-                loader.visible = true;
-            }else if(state === ServerTools.VOTING){
-                choose_team_and_host.visible = true;
-            }else if(state === ServerTools.WAIT_FOR_RANKING){
-                waiting_for_game_ranking.visible = true;
-            }else if(state === ServerTools.ADMIN_PANEL){
-                admin_panel.visible = true;
-            }else if(state === ServerTools.GAME){
-                alreadyAnswered = false;
-                game.visible = true;
+            } else if (state === ServerTools.WAIT_FOR_GAME) {
+                loader.visible = true
+            } else if (state === ServerTools.VOTING) {
+                choose_team_and_host.visible = true
+            } else if (state === ServerTools.WAIT_FOR_RANKING) {
+                waiting_for_game_ranking.visible = true
+            } else if (state === ServerTools.HOST_PREVIEW_GAME) {
+                host_preview_game.visible = true
+            } else if (state === ServerTools.ADMIN_PANEL) {
+                admin_panel.visible = true
+            } else if (state === ServerTools.GAME) {
+                alreadyAnswered = false
+                game.visible = true
             }
         }
-        onPlayersChanged: function(){
-            vote_host_combobox.clear();
-            serverTools.players.forEach(function(player){
-                vote_host_combobox.append({"text": player})
-            });
+        onPlayersChanged: function () {
+            vote_host_combobox.clear()
+            serverTools.players.forEach(function (player) {
+                vote_host_combobox.append({
+                                              "text": player
+                                          })
+            })
         }
-        onRankingChanged: function(){
-            setTimeout(function(){
-                rankingModel.clear();
-                serverTools.ranking.forEach(function(playerName, index){
-                    rankingModel.append({"rank": index+1, "playerName": playerName})
-                });
-            }, 500);
+        onRankingChanged: function () {
+            setTimeout(function () {
+                rankingModel.clear()
+                serverTools.ranking.forEach(function (playerName, index) {
+                    rankingModel.append({
+                                            "rank": index + 1,
+                                            "playerName": playerName
+                                        })
+                })
+            }, 500)
         }
-        onRoundChanged: function(){
-            if(serverTools.state === ServerTools.GAME){
-                game_markers.clear();
-                alreadyAnswered = false;
+        onRoundChanged: function () {
+            game_markers.clear()
+            if (serverTools.state === ServerTools.GAME) {
+                game_markers.clear()
+                alreadyAnswered = false
 
-                introduction.visible = false;
-                loader.visible = false;
-                choose_team_and_host.visible = false;
-                waiting_for_game_ranking.visible = false;
-                game.visible = true;
-                introNameError.visible = false;
-                admin_panel.visible = false;
-                introError.visible = false;
-                waiting_for_game.visible = false;
+                introduction.visible = false
+                loader.visible = false
+                choose_team_and_host.visible = false
+                waiting_for_game_ranking.visible = false
+                game.visible = true
+                introNameError.visible = false
+                admin_panel.visible = false
+                introError.visible = false
+                waiting_for_game.visible = false
             }
-
         }
-        onAnswersChanged: function(){
-            var min = 0;
-            if(game_markers.count > 0){
-                if(game_markers.get(0).id === serverTools.me){
-                    min = 1;
+        onAnswersChanged: function () {
+            var min = 0
+            if (game_markers.count > 0) {
+                if (game_markers.get(0).id === serverTools.me) {
+                    min = 1
                 }
             }
 
-            for(var i=game_markers.count-1; i>=min; i--){
-                game_markers.remove(i);
+            for (var i = game_markers.count - 1; i >= min; i--) {
+                game_markers.remove(i)
             }
-            Object.keys(serverTools.answers).forEach(function(key){
+            Object.keys(serverTools.answers).forEach(function (key) {
                 game_markers.insert(min, {
-                    "position": QtPositioning.coordinate(serverTools.answers[key].x, serverTools.answers[key].y), "id": key
-                });
-                min++;
-            });
+                                        "position": QtPositioning.coordinate(
+                                                        serverTools.answers[key].x,
+                                                        serverTools.answers[key].y),
+                                        "id": key
+                                    })
+                min++
+            })
         }
-
-
     }
 
     Rectangle {
@@ -231,7 +240,8 @@ Window {
                 onClicked: function () {
                     introduction.visible = false
                     loader.visible = true
-                    serverTools.connect(nameTF.text, parseInt(serverCB.currentText));
+                    serverTools.connect(nameTF.text,
+                                        parseInt(serverCB.currentText))
                 }
             }
             Text {
@@ -282,7 +292,7 @@ Window {
                 }
                 padding: buttonPadding
                 onClicked: function () {
-                    serverTools.quit();
+                    serverTools.quit()
                 }
             }
         }
@@ -393,17 +403,16 @@ Window {
                 color: "#C1C1C4"
             }
 
-            ListModel{
+            ListModel {
                 id: rankingModel
             }
             Component {
-               id: rankingDelegate
-               Text {
-                   text: qsTr(rank + ". " + playerName)
-                   font.pointSize: 18
-                   color: "#ffffff"
-               }
-
+                id: rankingDelegate
+                Text {
+                    text: qsTr(rank + ". " + playerName)
+                    font.pointSize: 18
+                    color: "#ffffff"
+                }
             }
             ListView {
                 model: rankingModel
@@ -411,9 +420,7 @@ Window {
                 Layout.fillWidth: parent
 
                 height: childrenRect.height
-
             }
-
         }
 
         //Ekran gry
@@ -424,7 +431,7 @@ Window {
             id: game
             visible: false
             Column {
-                width: parent.width*0.75 - 5
+                width: parent.width * 0.75 - 5
                 height: parent.height
 
                 Text {
@@ -442,20 +449,20 @@ Window {
 
                 Map {
                     width: parent.width
-                    height: parent.height-time.height
+                    height: parent.height - time.height
                     plugin: mapPlugin
                     id: map_game
                     center: QtPositioning.coordinate(52.40371, 16.9495) // PP <3
                     zoomLevel: 20
 
-                    MapItemView{
+                    MapItemView {
                         model: game_markers
                         delegate: MapQuickItem {
                             coordinate: model.position
                             anchorPoint.x: game_marker_img.width * 0.5
                             anchorPoint.y: game_marker_img.height
-                            sourceItem: Column{
-                                Text{
+                            sourceItem: Column {
+                                Text {
                                     text: model.id
                                 }
 
@@ -467,23 +474,27 @@ Window {
                         }
                     }
 
-                    MouseArea{
+                    MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            var coord = map_game.toCoordinate(Qt.point(mouse.x,mouse.y));
-                            if(game_markers.count > 0){
-                                if(game_markers.get(0).id === serverTools.me){
-                                    game_markers.remove(0);
+                            var coord = map_game.toCoordinate(Qt.point(mouse.x,
+                                                                       mouse.y))
+                            if (game_markers.count > 0) {
+                                if (game_markers.get(0).id === serverTools.me) {
+                                    game_markers.remove(0)
                                 }
                             }
 
-                            game_markers.insert(0, {"position": coord, "id": serverTools.me})
+                            game_markers.insert(0, {
+                                                    "position": coord,
+                                                    "id": serverTools.me
+                                                })
                         }
                     }
                 }
             }
             Column {
-                width: parent.width*0.25 - 5
+                width: parent.width * 0.25 - 5
                 height: parent.height
 
                 Text {
@@ -503,9 +514,10 @@ Window {
                     source: serverTools.photoURL
                 }
 
-                Rectangle{
+                Rectangle {
                     width: parent.width
-                    height: parent.height - round_counter_game.height-photo_challenge.height-challenge_button.height
+                    height: parent.height - round_counter_game.height
+                            - photo_challenge.height - challenge_button.height
                     color: bgColor
                 }
 
@@ -513,7 +525,9 @@ Window {
                     id: challenge_button
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: qsTr("Answer")
-                    enabled: game_markers.count > 0 && game_markers.get(0).id === serverTools.me && !alreadyAnswered && serverTools.timeLeft > 0
+                    enabled: game_markers.count > 0 && game_markers.get(
+                                 0).id === serverTools.me && !alreadyAnswered
+                             && serverTools.timeLeft > 0
 
                     palette.buttonText: "#FFF"
                     background: Rectangle {
@@ -522,15 +536,14 @@ Window {
                     }
                     padding: buttonPadding
                     onClicked: function () {
-                        const coords = game_markers.get(0);
-                        serverTools.sendAnswer(coords.position.latitude, coords.position.longitude)
+                        const coords = game_markers.get(0)
+                        serverTools.sendAnswer(coords.position.latitude,
+                                               coords.position.longitude)
                         alreadyAnswered = true
                     }
                 }
-
             }
         }
-
 
         //Ekran hosta
         Row {
@@ -540,7 +553,7 @@ Window {
             id: admin_panel
             visible: false
             Column {
-                width: parent.width*0.75 - 5
+                width: parent.width * 0.75 - 5
                 height: parent.height
 
                 Text {
@@ -558,13 +571,13 @@ Window {
 
                 Map {
                     width: parent.width
-                    height: parent.height-admin_header.height
+                    height: parent.height - admin_header.height
                     plugin: mapPlugin
                     id: map_admin
                     center: QtPositioning.coordinate(52.40371, 16.9495) // PP <3
                     zoomLevel: 20
 
-                    MapItemView{
+                    MapItemView {
                         model: marker
                         delegate: MapQuickItem {
                             coordinate: model.position
@@ -577,18 +590,21 @@ Window {
                         }
                     }
 
-                    MouseArea{
+                    MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            var coord = map_admin.toCoordinate(Qt.point(mouse.x,mouse.y));
-                            marker.clear();
-                            marker.append({"position": coord})
+                            var coord = map_admin.toCoordinate(
+                                        Qt.point(mouse.x, mouse.y))
+                            marker.clear()
+                            marker.append({
+                                              "position": coord
+                                          })
                         }
                     }
                 }
             }
             Column {
-                width: parent.width*0.25 - 5
+                width: parent.width * 0.25 - 5
                 height: parent.height
 
                 Text {
@@ -606,15 +622,17 @@ Window {
 
                     fillMode: Image.PreserveAspectFit
                     source: noPhoto
-                    onStatusChanged: function(){
-                        if(this.status === Image.Error || this.status === Image.Null){
+                    onStatusChanged: function () {
+                        if (this.status === Image.Error
+                                || this.status === Image.Null) {
                             this.source = errorPhoto
                         }
                     }
                 }
-                Column{
+                Column {
                     width: parent.width
-                    height: parent.height - photo_preview.height - round_counter_admin.height - admin_panel_btns.height
+                    height: parent.height - photo_preview.height
+                            - round_counter_admin.height - admin_panel_btns.height
                     Text {
                         id: paste_url_text
                         Layout.alignment: Qt.AlignCenter
@@ -622,7 +640,7 @@ Window {
                         color: "#FFF"
                     }
                     Rectangle {
-                        property real teMaxHeight: parent.height - paste_url_text.height;
+                        property real teMaxHeight: parent.height - paste_url_text.height
                         width: parent.width
                         color: '#ffffff'
                         height: photo_url.height > teMaxHeight ? teMaxHeight : photo_url.height
@@ -631,25 +649,32 @@ Window {
                             id: photo_url
                             focus: true
                             wrapMode: TextEdit.WrapAnywhere
-                            onTextChanged: function(e){
-                                var save = photo_url.cursorPosition;
-                                const newlines = countChar(photo_url.text.substring(0, save), [10, 9])
-                                if(newlines !== 0){
-                                    photo_url.text = photo_url.text.replace(String.fromCharCode(10), '');                                    photo_url.cursorPosition = save > 256 ? 256 : save;
-                                    photo_url.text = photo_url.text.replace(String.fromCharCode(9), '');                                    photo_url.cursorPosition = save > 256 ? 256 : save;
-                                    save -= newlines;
+                            onTextChanged: function (e) {
+                                var save = photo_url.cursorPosition
+                                const newlines = countChar(
+                                                   photo_url.text.substring(
+                                                       0, save), [10, 9])
+                                if (newlines !== 0) {
+                                    photo_url.text = photo_url.text.replace(
+                                                String.fromCharCode(10), '')
+                                    photo_url.cursorPosition = save > 256 ? 256 : save
+                                    photo_url.text = photo_url.text.replace(
+                                                String.fromCharCode(9), '')
+                                    photo_url.cursorPosition = save > 256 ? 256 : save
+                                    save -= newlines
                                 }
 
-                                if(photo_url.length >= 256){
-                                    photo_url.text = photo_url.text.substring(0, 256)
+                                if (photo_url.length >= 256) {
+                                    photo_url.text = photo_url.text.substring(
+                                                0, 256)
                                 }
 
-                                photo_url.cursorPosition = save > 256 ? 256 : save;
+                                photo_url.cursorPosition = save > 256 ? 256 : save
                             }
                         }
                     }
                 }
-                Row{
+                Row {
                     id: admin_panel_btns
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 10
@@ -670,7 +695,7 @@ Window {
                     Button {
                         id: ok_button
                         text: qsTr("Start")
-                        enabled: [noPhoto, errorPhoto].every(function(a){
+                        enabled: [noPhoto, errorPhoto].every(function (a) {
                             return a != photo_preview.source
                         }) && marker.count === 1
 
@@ -681,14 +706,92 @@ Window {
                         }
                         padding: buttonPadding
                         onClicked: function () {
-                            const coords = marker.get(0);
-                            serverTools.sendPhoto(photo_preview.source, coords.position.latitude, coords.position.longitude)
+                            const coords = marker.get(0)
+                            serverTools.sendPhoto(photo_preview.source,
+                                                  coords.position.latitude,
+                                                  coords.position.longitude)
                             photo_url.text = ""
                             photo_url.focus = true
                             photo_preview.source = noPhoto
                             marker.clear()
                         }
                     }
+                }
+            }
+        }
+        //Ekran hosta gry
+        Row {
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 10
+            id: host_preview_game
+            visible: false
+            Column {
+                width: parent.width * 0.75 - 5
+                height: parent.height
+
+                Text {
+                    id: time_host
+                    color: "#FFF"
+                    text: qsTr("Pozostały czas: " + serverTools.timeLeft + "s")
+                    font.pointSize: headerFontSize
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+
+                Map {
+                    width: parent.width
+                    height: parent.height - time_host.height
+                    plugin: mapPlugin
+                    id: map_game_host
+                    center: QtPositioning.coordinate(52.40371, 16.9495) // PP <3
+                    zoomLevel: 20
+
+                    MapItemView {
+                        model: game_markers
+                        delegate: MapQuickItem {
+                            coordinate: model.position
+                            anchorPoint.x: game_marker_img.width * 0.5
+                            anchorPoint.y: game_marker_img.height
+                            sourceItem: Column {
+                                Text {
+                                    text: model.id
+                                }
+
+                                Image {
+                                    id: game_marker_img_host
+                                    source: "marker.png"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Column {
+                width: parent.width * 0.25 - 5
+                height: parent.height
+
+                Text {
+                    id: round_counter_game_host
+                    text: qsTr("Runda " + serverTools.round)
+                    color: "#FFF"
+
+                    font.pointSize: headerFontSize
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+                Image {
+                    id: photo_challenge_host
+                    sourceSize.width: parent.width
+                    Layout.alignment: Qt.AlignCenter
+
+                    fillMode: Image.PreserveAspectFit
+                    source: serverTools.photoURL
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: parent.height - round_counter_game.height
+                            - photo_challenge.height - challenge_button.height
+                    color: bgColor
                 }
             }
         }

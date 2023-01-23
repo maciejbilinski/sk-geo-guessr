@@ -53,7 +53,7 @@ void ServerTools::vote(QString player, QString team)
 
 void ServerTools::sendPhoto(QString photo, double latitude, double longitude)
 {
-    _state = CLIENT_STATE::WAIT_FOR_RANKING;
+    _state = CLIENT_STATE::HOST_PREVIEW_GAME;
     emit stateChanged(_state);
     _socket.write(("action:host_place;content:" + photo + " " + QString::number(latitude) + " " + QString::number(longitude) + " ;\n").toLocal8Bit());
     qDebug() << "SENT action:host_place;content:" + photo + " " + QString::number(latitude) + " " + QString::number(longitude) + " ;\n";
@@ -122,7 +122,7 @@ void ServerTools::readyRead()
             emit rankingChanged();
             _state = CLIENT_STATE::VOTING;
             emit stateChanged(_state);
-        }else if(data.contains("action:ranking;content:")){
+        }else if(data.contains("action:ranking;content:") || data.contains("action:rankine;content:")){
             QString rank = data.mid(23);
             QStringList ranks = rank.split( " " );
             _ranking.clear();
@@ -131,11 +131,10 @@ void ServerTools::readyRead()
                 _ranking.append(r);
             }
             emit rankingChanged();
-            if(_state == CLIENT_STATE::GAME){
+            if(_state == CLIENT_STATE::GAME || data.contains("action:rankine;content:")){
                 _state = CLIENT_STATE::WAIT_FOR_RANKING;
                 emit stateChanged(_state);
             }
-
         }else if(data.contains("action:host;content:")){
             _round = 1;
             emit roundChanged();
@@ -158,6 +157,17 @@ void ServerTools::readyRead()
             timer.stop();
             timer.start();
             _state = CLIENT_STATE::GAME;
+            emit timeLeftChanged();
+            emit photoURLChanged();
+            emit stateChanged(_state);
+            emit answersChanged();
+            emit roundChanged();
+        }else if(data.contains("action:round_time;content:")){
+            QStringList subdata = data.mid(26).split(" ");
+            _round = subdata[0].toInt();
+            _timeLeft = (subdata[1].toLongLong()-QDateTime::currentMSecsSinceEpoch())/1000;
+            timer.stop();
+            timer.start();
             emit timeLeftChanged();
             emit photoURLChanged();
             emit stateChanged(_state);

@@ -14,7 +14,7 @@ class Server : public Handler{
         std::unordered_set<Client*> clients;
         bool log;
     public:
-        Server(long port, bool log=true);
+        Server(long port, bool log=true, std::string config_file_path="");
         virtual ~Server();
 
         virtual void hookEpoll(int epollFd);
