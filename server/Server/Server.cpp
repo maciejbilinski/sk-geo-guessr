@@ -12,7 +12,7 @@
 #include "../exceptions/HandlerNotHooked.h"
 #include "../Packet/Packet.h"
 
-Server::Server(long port, bool log) : log{log} {
+Server::Server(long port, bool log,std::string config_file_path) : log{log} {
     this->fd = socket(AF_INET, SOCK_STREAM, 0);
     if(this->fd == -1) throw InaccessibleServer();
 
@@ -30,7 +30,7 @@ Server::Server(long port, bool log) : log{log} {
     
     res = listen(this->fd, 1);
     if(res) throw InaccessibleServer();
-    this->geoguessrGame.setup();
+    this->geoguessrGame.setup(config_file_path);
 }
 
 Server::~Server(){

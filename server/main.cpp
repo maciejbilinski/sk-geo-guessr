@@ -1,3 +1,5 @@
+#include <cstring>
+#include <fstream>
 #include <iostream>
 #include <exception>
 #include <csignal>
@@ -6,6 +8,7 @@
 #include "tools/readPort.h"
 #include "Server/Server.h"
 #include "Handler/Handler.h"
+#include <string>
 #include <sys/epoll.h>
 #include <vector>
 #include <chrono>
@@ -26,10 +29,23 @@ int main(int argc, char const *argv[]){
     using namespace ServerGlobal;
 
     try{
-        if(argc != 2) throw IncorrectArguments();
+        if(argc < 2 || argc>3) throw IncorrectArguments();
         long port = readPort(argv[1]);
-
-        server = new Server(port);
+        
+        if (argc == 3 && strlen(argv[2])>0){
+            std::ifstream file;
+            file.exceptions ( std::ifstream::badbit );
+            try {
+                file.open (argv[2]);
+                server = new Server(port,true,argv[2]);
+            }catch (const std::ifstream::failure& e) {
+                std::cout << "Exception opening config";
+                server = new Server(port);
+            }
+            file.close();
+        }else{
+            server = new Server(port);
+        }
         std::cout << "Server listens on PORT " << port << std::endl;
 
         signal(SIGINT, closeServer);
