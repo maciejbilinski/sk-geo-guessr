@@ -28,6 +28,7 @@ std::vector<std::string> sort_map(std::map<std::string, double> &M)
         rnd.push_back(it.first);
     }
     return rnd;
+
 }
 
 void Game::gameLoop()
@@ -85,6 +86,7 @@ void Game::gameLoop()
                 (this->currentState) = GameState::ADMIN_PANEL; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait
                 this->round = 0;
                 for (auto vote : this->votes)
+
                 {
                     if (temp.find(vote) == temp.end())
                     {
@@ -178,6 +180,7 @@ void Game::gameLoop()
                 }
                 }
 
+
                 for (auto team : this->teams)
                 {
                     rank.insert_or_assign(team.first, team.second.calculate_points_distance(this->goal));
@@ -186,6 +189,7 @@ void Game::gameLoop()
                             this->removePlayer(toRemove->getFD());
                             toRemove->onRemove(true);
                             });
+
                     team.second.members_points.clear();
                 }
                 
@@ -593,6 +597,7 @@ void Game::startNewRound(Client *player, const Packet &packet)
                         .count() +
                         this->GAME_TIME*1000; // TODO: CONFIG
                     Packet packet("place", std::to_string(this->round+1) + " " + tokens[0] + " " + std::to_string(ms));
+
                     this->newPlace();
                     std::cout << "Try to send place packet" << std::endl << '\t';
                     packet.print();
