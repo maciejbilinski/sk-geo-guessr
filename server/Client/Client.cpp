@@ -13,7 +13,7 @@ Client::Client(int fd, Server* server):
     readBuffer{
         fd, 
         [this](const Buffer& buff){
-            std::cout << "Invalid data: '" << std::regex_replace(buff.getData(), std::regex("\n"), "\\n") << '\'' << std::endl;
+            std::cout << "Cant parse as packet: '" << std::regex_replace(buff.getData(), std::regex("\n"), "\\n") << '\'' << std::endl;
             this->onRemove(true);
         },
         [fd,this](const Packet& packet){ // tutaj musi być cała logika odbioru pakietów i jakaś komunikacja z obiektem server
@@ -42,7 +42,7 @@ Client::Client(int fd, Server* server):
             }else if(packet.action == "set_place"){
                 this->server->geoguessrGame.setPlace(this, packet);
             }else{
-                std::cout << "Invalid data: '" << std::regex_replace(packet.toString(), std::regex("\n"), "\\n") << '\'' << std::endl;
+                std::cout << "Unknown packet: '" << std::regex_replace(packet.toString(), std::regex("\n"), "\\n") << '\'' << std::endl;
                 this->onRemove(true);
             }
         }

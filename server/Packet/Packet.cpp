@@ -16,6 +16,7 @@ Packet::Packet(std::string str){
     }
 
     if(tokens.size() != 2){
+        std::cout << "Not enough ';'" << std::endl;
         throw IncorrectPacket();
     }else{
         for (auto &token : tokens){
@@ -23,6 +24,7 @@ Packet::Packet(std::string str){
                 if(pos != 0){
                     pos = token.find("content");
                     if(pos != 0){
+                        std::cout << "Missing parts" << std::endl;
                         throw IncorrectPacket();
                     }else{
                         token.erase(0, 8);

@@ -113,9 +113,13 @@ void ServerTools::readyRead()
             _players.removeAll(playerName);
             emit playersChanged();
         }else if(data == "action:player_vote;content:ok"){
+            _ranking.clear();
+            emit rankingChanged();
             _state = CLIENT_STATE::WAIT_FOR_RANKING;
             emit stateChanged(_state);
         }else if(data == "action:voting_failed;content:"){
+            _ranking.clear();
+            emit rankingChanged();
             _state = CLIENT_STATE::VOTING;
             emit stateChanged(_state);
         }else if(data.contains("action:ranking;content:")){

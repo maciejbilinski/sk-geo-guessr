@@ -37,7 +37,7 @@ namespace CONFIG
 
     int END_TIME = 10;
 
-    int MAX_ROUND = 5;
+    int MAX_ROUND = 1;
 
     int MIN_PLAYERS_TO_VOTE = 1;
 
@@ -96,6 +96,7 @@ void Game::gameLoop()
         case GameState::VOTING:
             (this->time_counter) = CONFIG::ADMIN_PANEL_TIME;
             (this->currentState) = GameState::ADMIN_PANEL; // wchodzimy w stan wyboru zdjecia, ludzie widza plansze wait
+            this->round = 1;
             for (auto vote : this->votes)
             {
                 if (temp.find(vote) == temp.end())
@@ -162,7 +163,7 @@ void Game::gameLoop()
             this->backToVoting(true);
             break;
         case GameState::GAME:
-            if(this->round >= CONFIG::MAX_ROUND){
+            if(this->round > CONFIG::MAX_ROUND){
                 (this->time_counter) = CONFIG::END_TIME;
                 (this->currentState) = GameState::END; // koniec gry, dajemy czas na zobaczenie rankingu
             }else{
@@ -197,17 +198,21 @@ void Game::gameLoop()
                     (*j)->addWriter(writer);
                 }
 
-                Packet pck("round", std::to_string(this->round));
-                WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, pck](const Buffer &buffer) {
-                    std::cout << "Error during round " << pck.action << " packet to " << host->getName() << std::endl;
-                }, [this, pck]() {
-                    std::cout << "Sent round " << pck.action << " packet to " << host->getName() << std::endl;
-                }, pck);
-                host->addWriter(writer);
+                if(currentState != GameState::END){
+                    Packet pck("round", std::to_string(this->round));
+                    WriteBuffer *writer = new WriteBuffer(host->getFD(), [this, pck](const Buffer &buffer) {
+                        std::cout << "Error during round " << pck.content << " packet to " << host->getName() << std::endl;
+                    }, [this, pck]() {
+                        std::cout << "Sent round " << pck.content << " packet to " << host->getName() << std::endl;
+                    }, pck);
+                    host->addWriter(writer);
+                }
+
 
                 for (auto team : this->teams)
                 {
                     team.second.removeAfk([this](Client* toRemove){
+                        std::cout << "Removed " << toRemove->getName() << " because was afk" << std::endl;
                         this->removePlayer(toRemove->getFD());
                         toRemove->onRemove(true);
                     });
@@ -515,8 +520,8 @@ void Game::startNewRound(Client *player, const Packet &packet)
                                 system_clock::now().time_since_epoch())
                                 .count() +
                             CONFIG::GAME_TIME*1000; // TODO: CONFIG
-                    this->newPlace();
                     Packet packet("place", std::to_string(this->round) + " " + tokens[0] + " " + std::to_string(ms));
+                    this->newPlace();
                     std::cout << "Try to send place packet" << std::endl << '\t';
                     packet.print();
                     for (int i = 0; this->players.size() > i; i++)

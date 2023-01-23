@@ -15,11 +15,11 @@ void Team::removeAfk(std::function<void(Client*)> onRemove){
                 was=true;
                 break;
             }
-            if(!was){
-                this->remove_player(member->getFD());
-                onRemove(member);
-            }
         }    
+        if(!was){
+            this->remove_player(member->getFD());
+            onRemove(member);
+        }
     }
 }
 
